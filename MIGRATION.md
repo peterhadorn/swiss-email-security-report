@@ -14,6 +14,13 @@ with its SHA-256 checksum in `provenance/scanner-files.sha256`. Predecessor Git
 objects, refs, branches, tags, and unrelated source files were excluded from
 this repository.
 
+`analyze_dmarc.py` and `tests/test_analyze_dmarc.py` were subsequently brought
+over from the private audit clone with terminology corrections. They are not
+part of the byte-identical scanner-file manifest: the analyzer now reports DS,
+TLSA, and MTA-STS TXT record presence precisely, describes DKIM selector
+findings as a provider-aware lower bound and key-length heuristic, and makes
+clear that it is not the canonical release exporter.
+
 The underlying measurement consists of DNS measurements performed 17–19 August
 2026 over the normalized 12 April 2026 SWITCH `.ch` zone snapshot. This
 repository remains private until its release gate is satisfied; it is intended

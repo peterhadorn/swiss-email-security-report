@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swiss-email-security-report"
+version = "0.0.0"
+description = "Scanner source for aggregate Swiss email-security research"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {file = "LICENSE"}
+dependencies = [
+    "dnspython==2.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "Pillow",
+]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"

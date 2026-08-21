@@ -1,5 +1,9 @@
-# Private scan inputs and results
-data/
+# Private scan inputs and results. Aggregate release artifacts may be tracked
+# only under data/releases/ after the publication validation gate; never add
+# raw inputs or domain-level outputs there.
+data/*
+!data/releases/
+!data/releases/**
 *.db
 *.db-*
 *.sqlite*
@@ -11,6 +15,9 @@ domain-lists/
 domain-list*/
 domains*/
 samples/
+*-domains.*
+*domain-results.*
+*scan-results.*
 
 # Local configuration and generated state
 .env
