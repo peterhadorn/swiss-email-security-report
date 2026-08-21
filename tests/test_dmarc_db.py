@@ -3,7 +3,7 @@ import sqlite3
 
 import pytest
 
-from dmarc_scanner.db import create_table, get_done_domains, insert_result
+from dmarc_scanner.db import create_table, get_done_domains, insert_result, validate_output_path
 from dmarc_scanner.models import DmarcScanResult
 
 
@@ -112,3 +112,20 @@ def test_get_done_domains_excludes_rows_with_partial_query_errors(conn):
     conn.commit()
 
     assert get_done_domains(conn) == set()
+
+
+@pytest.mark.parametrize("filename", ["scan?.db", "scan#fragment.db", "scan?#both.db"])
+def test_validate_output_path_quotes_special_uri_filename_without_side_effects(
+    tmp_path, filename
+):
+    path = tmp_path / filename
+    connection = sqlite3.connect(path)
+    create_table(connection)
+    connection.close()
+    before_bytes = path.read_bytes()
+    before_names = {item.name for item in tmp_path.iterdir()}
+
+    validate_output_path(path)
+
+    assert path.read_bytes() == before_bytes
+    assert {item.name for item in tmp_path.iterdir()} == before_names

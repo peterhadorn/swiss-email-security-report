@@ -9,7 +9,6 @@ import argparse
 import concurrent.futures
 import json
 import logging
-import random
 import sqlite3
 import time
 from datetime import datetime, timezone
@@ -19,8 +18,21 @@ from dmarc_scanner import resolve
 from dmarc_scanner.db import create_table, get_done_domains, insert_result, validate_output_path
 from dmarc_scanner.models import DmarcScanResult
 from dmarc_scanner.provenance import (
+    FRESH_MODE,
+    PreparedResume,
+    RESUME_MODE,
+    RunSummary,
+    consume_prepared_resume_manifest,
+    database_accounting,
     manifest_path_for,
+    normalized_input_digest,
+    normalized_domain_list,
+    planned_domains_from_source,
+    prepare_resume_manifest,
+    revalidate_consumed_prepared_resume,
     scanner_git_provenance,
+    validate_fresh_output_preflight,
+    validate_resume_output_preflight,
     write_scan_manifest,
 )
 from dmarc_scanner.resolve import query as real_query, query_batch as real_query_batch
@@ -61,6 +73,7 @@ def run(
     resume: bool = True,
     query_fn=None,
     query_batch_fn=None,
+    prepared_resume: PreparedResume | None = None,
 ):
     """Scan all domains with a thread-pool concurrency limit, write to SQLite."""
     # Only default to the real, network-touching query_batch when query_fn
@@ -74,31 +87,73 @@ def run(
     if query_batch_fn is None and using_real_query:
         query_batch_fn = real_query_batch
 
-    # A stale sidecar can never be allowed to describe an output about to be
-    # changed, including a run that subsequently fails.
-    manifest_path_for(db_path).unlink(missing_ok=True)
+    if type(concurrency) is not int or concurrency <= 0:
+        raise ValueError("concurrency must be an integer > 0")
+    planned = normalized_domain_list(domains, require_nonempty=False)
+    if planned != list(domains):
+        raise ValueError("run domains must already be uniquely normalized")
+    if resume:
+        if not isinstance(prepared_resume, PreparedResume):
+            raise RuntimeError("resume run requires a consumed PreparedResume")
+        revalidate_consumed_prepared_resume(
+            db_path,
+            prepared_resume,
+            planned_input_lines=planned,
+            concurrency=concurrency,
+            resolver_configuration=resolve.resolver_configuration(),
+            batch_pool_size=resolve.batch_pool_size(),
+        )
+    else:
+        if prepared_resume is not None:
+            raise ValueError("fresh run cannot receive a PreparedResume")
+        validate_fresh_output_preflight(db_path)
     validate_output_path(db_path)
+    active_manifest = manifest_path_for(db_path)
+    if active_manifest.exists() or active_manifest.is_symlink():
+        raise RuntimeError(
+            "active scan manifest must be validated/consumed before database mutation"
+        )
     conn = sqlite3.connect(db_path)
     conn.execute("PRAGMA journal_mode=WAL")
     if not resume:
-        conn.execute("DROP TABLE IF EXISTS dmarc_scan_results")
-        conn.commit()
-        logger.info("Starting fresh: cleared existing dmarc_scan_results table")
+        logger.info("Starting fresh in a new output database")
     create_table(conn)
 
-    db_total_scanned = conn.execute("SELECT COUNT(*) FROM dmarc_scan_results").fetchone()[0]
-
+    pre_database = database_accounting(conn)
+    db_total_scanned = pre_database.total_rows
+    excluded_count = 0
+    planned_count = len(domains)
     if resume:
         done = get_done_domains(conn)
         before = len(domains)
         domains = [d for d in domains if d not in done]
+        excluded_count = before - len(domains)
         logger.info(f"Resume: {len(done)} done, {len(domains)} remaining (of {before})")
 
     total = len(domains)
+    attempted_sha256, attempted_count = normalized_input_digest(domains)
+    if prepared_resume is not None and (
+        attempted_sha256, attempted_count
+    ) != (
+        prepared_resume.expected_attempted_input_sha256,
+        prepared_resume.expected_attempted_input_count,
+    ):
+        _finalize_database(conn)
+        raise RuntimeError("runtime retry subset differs from PreparedResume")
     if total == 0:
         logger.info("Nothing to scan.")
+        post_database = database_accounting(conn)
         _finalize_database(conn)
-        return
+        return RunSummary(
+            RESUME_MODE if resume else FRESH_MODE,
+            planned_count,
+            excluded_count,
+            attempted_sha256,
+            attempted_count,
+            pre_database,
+            post_database,
+            0,
+        )
 
     scanned = 0
     mx_found = 0
@@ -158,12 +213,23 @@ def run(
             conn.commit()
             i += BATCH_SIZE
 
+    post_database = database_accounting(conn)
     _finalize_database(conn)
 
     elapsed = time.monotonic() - start_time
     logger.info(
         f"Done: {scanned} domains in {elapsed/60:.1f}m. "
         f"MX found: {mx_found} ({mx_found/max(scanned,1)*100:.1f}%) Errors: {errors}"
+    )
+    return RunSummary(
+        RESUME_MODE if resume else FRESH_MODE,
+        planned_count,
+        excluded_count,
+        attempted_sha256,
+        attempted_count,
+        pre_database,
+        post_database,
+        scanned,
     )
 
 
@@ -201,21 +267,31 @@ def main():
 
     args = parser.parse_args()
 
-    # Clear an old sidecar before any configuration, input, Git, or database
-    # failure path. A manifest must never survive the attempt it no longer
-    # describes.
-    manifest_path_for(args.output).unlink(missing_ok=True)
+    input_domains = load_domains(args.input)
+    domains = planned_domains_from_source(
+        input_domains,
+        limit=args.limit,
+        shuffle=args.shuffle,
+        shuffle_seed=42 if args.shuffle else None,
+    )
+    if type(args.concurrency) is not int or args.concurrency <= 0:
+        raise ValueError("--concurrency must be an integer > 0")
+    effective_batch_pool_size = (
+        args.batch_pool_size
+        if args.batch_pool_size is not None else resolve.batch_pool_size()
+    )
+    if type(effective_batch_pool_size) is not int or effective_batch_pool_size <= 0:
+        raise ValueError("--batch-pool-size must be an integer > 0")
+    output = Path(args.output)
+    output_present = output.exists() or output.is_symlink()
+    resume_requested = not args.no_resume and output_present
+    if resume_requested:
+        validate_resume_output_preflight(output)
+    else:
+        validate_fresh_output_preflight(output)
 
     if args.batch_pool_size is not None:
         resolve.configure_batch_pool_size(args.batch_pool_size)
-
-    input_domains = load_domains(args.input)
-    domains = list(input_domains)
-    if args.shuffle:
-        random.seed(42)
-        random.shuffle(domains)
-    if args.limit is not None:
-        domains = domains[:args.limit]
 
     logger.info(
         f"Loaded {len(domains)} domains, concurrency={args.concurrency}, "
@@ -224,17 +300,48 @@ def main():
 
     scanner_revision, scanner_dirty = scanner_git_provenance()
     started_at = datetime.now(timezone.utc)
-    run(
+    resume_link = (
+        prepare_resume_manifest(
+            args.output,
+            source_input_lines=input_domains,
+            planned_input_lines=domains,
+            resolver_configuration=resolve.resolver_configuration(),
+            concurrency=args.concurrency,
+            batch_pool_size=resolve.batch_pool_size(),
+            limit=args.limit,
+            shuffle=args.shuffle,
+            shuffle_seed=42 if args.shuffle else None,
+            started_at=started_at,
+        )
+        if resume_requested else None
+    )
+    if resume_link is not None:
+        consume_prepared_resume_manifest(
+            args.output,
+            resume_link,
+            source_input_lines=input_domains,
+            planned_input_lines=domains,
+            resolver_configuration=resolve.resolver_configuration(),
+            concurrency=args.concurrency,
+            batch_pool_size=resolve.batch_pool_size(),
+            limit=args.limit,
+            shuffle=args.shuffle,
+            shuffle_seed=42 if args.shuffle else None,
+        )
+    summary = run(
         domains,
         args.output,
         concurrency=args.concurrency,
-        resume=not args.no_resume,
+        resume=resume_requested,
+        prepared_resume=resume_link,
     )
     finished_at = datetime.now(timezone.utc)
     manifest_path = write_scan_manifest(
         args.output,
         source_input_lines=input_domains,
-        effective_input_lines=domains,
+        planned_input_lines=domains,
+        run_summary=summary,
+        resume_link=resume_link,
         scanner_git_revision=scanner_revision,
         scanner_git_dirty=scanner_dirty,
         resolver_configuration=resolve.resolver_configuration(),
@@ -242,7 +349,6 @@ def main():
         finished_at=finished_at,
         concurrency=args.concurrency,
         batch_pool_size=resolve.batch_pool_size(),
-        retry_resume_mode=("fresh" if args.no_resume else "resume_retry_partial_errors"),
         limit=args.limit,
         shuffle=args.shuffle,
         shuffle_seed=42 if args.shuffle else None,

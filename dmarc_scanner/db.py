@@ -64,7 +64,7 @@ def validate_output_path(db_path: str) -> None:
     if not path.exists():
         return
     try:
-        conn = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
+        conn = sqlite3.connect(path.resolve().as_uri() + '?mode=ro', uri=True)
     except sqlite3.Error as exc:
         raise RuntimeError(f"cannot inspect existing output database {path}") from exc
     try:
