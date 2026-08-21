@@ -1,0 +1,66 @@
+{
+  "report": "Swiss Email Security Report",
+  "scan": "2026-08",
+  "measurement_period": {
+    "start": "2026-08-17T20:52:54Z",
+    "end": "2026-08-19T04:58:34Z"
+  },
+  "source_universe": {
+    "description": "SWITCH .ch zone snapshot",
+    "source_snapshot_normalized_on": "2026-04-12",
+    "input_sha256": "be742a42b89dbac80b5296316d35a2d245383e31d15d5df0b1242af8ec9e07c8"
+  },
+  "database": {
+    "size_bytes": 979771392,
+    "sha256": "1e0c94169a728e10d79d5db5f79292144bb6e73f859adbaf09ba280eb3e83b3f",
+    "row_count": 2459127,
+    "recorded_error_rows": 135039,
+    "analyzable_rows": 2324088,
+    "row_accounting": {
+      "assertion": "recorded_error_rows + analyzable_rows == row_count",
+      "verified": true
+    }
+  },
+  "scanner_sources": [
+    {
+      "repository": "swiss-web-report-dmarc",
+      "external_git_sha1": "74fb8d16f162a471d0b9d89f852ffe2603ae0522"
+    },
+    {
+      "repository": "swiss-web-report",
+      "external_git_sha1": "267a25932a14a1ac19e1f4dee66aafa89c7fcb97"
+    }
+  ],
+  "migration": {
+    "method": "clean-history import",
+    "source_files_verified_byte_identical": true,
+    "predecessor_git_objects_included": false
+  },
+  "imported_files": [
+    {"path": "dmarc_scan.py", "sha256": "da290e004ca15a71e715eaa977b8d980f12c0768aa96e8ff072256d05c77ddb8"},
+    {"path": "dmarc_scanner/__init__.py", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+    {"path": "dmarc_scanner/db.py", "sha256": "168b48e1269f9f76b2c0d1778214360942468fbdaa085026b8e3e2e8bf0c495a"},
+    {"path": "dmarc_scanner/models.py", "sha256": "7df05c6695c92d0378e8d4e1e7c63b7bb1bd076301b669fa5bb9d21b026bacc5"},
+    {"path": "dmarc_scanner/parsers.py", "sha256": "152c0f90d7cbd6481bd58643c789ec0d4ffac330a6ca8bf8514d55bb797d60a4"},
+    {"path": "dmarc_scanner/providers.py", "sha256": "2b5843e060c66da1d795dad8a4da1b6cf3ef038e4032c321c9df66bf7e6d741f"},
+    {"path": "dmarc_scanner/resolve.py", "sha256": "1ec8dda0d6bb37b41881edc7f2c61742ebdc3c19bc4317363e7980cf61693b7c"},
+    {"path": "dmarc_scanner/scan.py", "sha256": "6924cb5be2266ecb572c0eca568790dd38d83daa9db442bacd228a51f0f9ef20"},
+    {"path": "tests/test_dmarc_db.py", "sha256": "aeabbb48d73fbb66e74e8649ddc03546202aee51bc9dbfa2708709fb028888a1"},
+    {"path": "tests/test_dmarc_models.py", "sha256": "3dcfd1672322d2e27d5c44107438dbe4e19cf4eb0879298f2ba8e648b8fd822f"},
+    {"path": "tests/test_dmarc_parsers.py", "sha256": "dc0e6fe913a2b0f148c9e7ffe4feb615cc7a69f0a64e34dffc16d660d089f555"},
+    {"path": "tests/test_dmarc_providers.py", "sha256": "e2c72fc25e41cf27b04167ffd7d058acf70b361064269f63d01b5a26b08fbd98"},
+    {"path": "tests/test_dmarc_resolve.py", "sha256": "46bc12f1d0b51a51a65a776325fd6015f9ad0c3de823886a7ea70762f7741ff9"},
+    {"path": "tests/test_dmarc_scan.py", "sha256": "b47809a6def414878fd87715939996e905b0f2602d66f9aba98d73524466b9dd"},
+    {"path": "tests/test_dmarc_scan_cli.py", "sha256": "969beebff487175baf66e682c31399d13da9a8caff4b8c6f1e12ff48d4cf1f63"},
+    {"path": "LICENSE", "sha256": "9a130d84478a5c473eb584c9e3d7121f878c5eef3e202f73fed6d6a05a30033b"}
+  ],
+  "publication": {
+    "repository_private_until_release_gate": true,
+    "intended_public": true,
+    "raw_database_public": false,
+    "zone_input_public": false,
+    "domain_list_public": false,
+    "domain_level_results_public": false,
+    "hashed_domain_release_allowed": false
+  }
+}

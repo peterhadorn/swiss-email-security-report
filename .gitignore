@@ -1,0 +1,28 @@
+# Private scan inputs and results
+data/
+*.db
+*.db-*
+*.sqlite*
+*.log
+zone-inputs/
+zones/
+*.zone
+domain-lists/
+domain-list*/
+domains*/
+samples/
+
+# Local configuration and generated state
+.env
+.env.*
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
