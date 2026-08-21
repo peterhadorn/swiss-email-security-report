@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/peterhadorn/swiss-email-security-report/raw/codex/open-release/release/schema/metrics.schema.json",
+  "title": "Swiss Email Security Report aggregate metrics",
+  "type": "object",
+  "required": ["metrics"],
+  "additionalProperties": false,
+  "properties": {
+    "metrics": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/metric"}
+    }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id", "category", "numerator", "denominator",
+        "denominator_metric_id", "percentage", "display_percentage", "precision",
+        "population", "unit", "measurement_period", "method", "caveat"
+      ],
+      "properties": {
+        "metric_id": {"type": "string", "pattern": "^[a-z0-9_.]+$"},
+        "category": {"type": "string", "minLength": 1},
+        "numerator": {"type": "integer", "minimum": 0},
+        "denominator": {"type": "integer", "minimum": 0},
+        "denominator_metric_id": {"type": ["string", "null"]},
+        "percentage": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?$"},
+        "display_percentage": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?$"},
+        "precision": {"type": "integer", "minimum": 0},
+        "population": {"type": "string", "minLength": 1},
+        "unit": {"const": "domains"},
+        "measurement_period": {"type": "string", "minLength": 1},
+        "method": {"type": "string", "minLength": 1},
+        "caveat": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

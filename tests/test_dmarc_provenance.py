@@ -9,6 +9,7 @@ import dmarc_scan
 from analyze_dmarc import analyze
 from dmarc_scanner.db import create_table, metric_column
 from dmarc_scanner.provenance import (
+    SCANNER_REPOSITORY_ROOT,
     manifest_path_for,
     normalized_input,
     scanner_git_provenance,
@@ -134,7 +135,23 @@ def test_scanner_git_provenance_uses_scanner_repo_root_and_fails_closed(monkeypa
 
     assert revision == "b" * 40
     assert dirty is True
-    assert all(call[1]["cwd"].name == "swiss-email-security-report" for call in calls)
+    assert all(call[1]["cwd"].resolve() == SCANNER_REPOSITORY_ROOT.resolve() for call in calls)
+
+
+def test_scanner_git_provenance_is_independent_of_checkout_directory_name(monkeypatch, tmp_path):
+    arbitrary_checkout = tmp_path / "arbitrary-checkout-name"
+    arbitrary_checkout.mkdir()
+    calls = []
+
+    def fake_check_output(command, **kwargs):
+        calls.append(kwargs["cwd"])
+        return "c" * 40 + "\n" if command[-1] == "HEAD" else ""
+
+    monkeypatch.chdir(arbitrary_checkout)
+    monkeypatch.setattr("dmarc_scanner.provenance.subprocess.check_output", fake_check_output)
+
+    assert scanner_git_provenance() == ("c" * 40, False)
+    assert calls and all(path.resolve() == SCANNER_REPOSITORY_ROOT.resolve() for path in calls)
 
 
 def test_scanner_git_provenance_rejects_non_commit_revision(monkeypatch):
@@ -178,7 +195,11 @@ def test_analyzer_reads_legacy_presence_columns_without_migrating_them(tmp_path,
     analyze(str(path))
 
     assert "DS record present: 1 (100.0%)" in capsys.readouterr().out
-    columns = {row[1] for row in sqlite3.connect(path).execute("PRAGMA table_info(dmarc_scan_results)")}
+    inspected = sqlite3.connect(path)
+    try:
+        columns = {row[1] for row in inspected.execute("PRAGMA table_info(dmarc_scan_results)")}
+    finally:
+        inspected.close()
     assert "has_ds_record" not in columns
     assert "has_tlsa_record" not in columns
 

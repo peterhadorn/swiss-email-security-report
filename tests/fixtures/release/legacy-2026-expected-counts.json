@@ -1,0 +1,17 @@
+{
+  "metrics": {
+    "population.total": 2459127, "population.analyzable": 2324088, "population.error": 135039,
+    "mx.present": 1708618, "mx.absent": 615470, "ds.record_present": 1252199, "ns.answer_present": 2241187,
+    "published.mx_provider.unassigned_or_possibly_self_hosted": 433207, "published.mx_provider.other_or_unrecognized": 410893,
+    "mx.provider.hostpoint": 348745, "mx.provider.infomaniak": 179364, "mx.provider.microsoft365": 160321, "mx.provider.google_workspace": 59756,
+    "spf.present": 1482058, "spf.hardfail": 574101, "spf.softfail": 490742, "spf.neutral": 87889, "spf.no_terminal_mechanism": 328967, "spf.legacy_rrtype99": 9954, "spf.no_mx_present": 180313,
+    "dkim.selector_observed": 342876, "dkim.weak_key_heuristic": 108768, "dkim.testing_mode": 25430,
+    "dmarc.detected": 731804, "dmarc.reject": 227927, "dmarc.quarantine": 283399, "dmarc.none": 219990,
+    "dmarc.genuine_no_record": 976814,
+    "dmarc.missing_policy": 308,
+    "dmarc.unsupported_policy": 180,
+    "dmarc.no_supported_effective_policy": 977302,
+    "dmarc.no_detected_enforcement": 1197292, "dmarc.detected_all": 906450, "dmarc.partial_pct": 4435, "dmarc.strict_alignment": 109255, "dmarc.no_mx_detected": 174646,
+    "mx.unresolvable": 38351, "tlsa.record_present": 654920, "bimi.record_present": 1324, "mta_sts.txt_present": 2537, "tls_rpt.record_present": 2728, "caa.record_present": 26279
+  }
+}
