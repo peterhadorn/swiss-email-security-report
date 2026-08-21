@@ -13,6 +13,8 @@ import argparse
 from pathlib import Path
 import sqlite3
 
+from dmarc_scanner.db import metric_column
+
 
 def _c(conn, where: str) -> int:
     return conn.execute(f"SELECT COUNT(*) FROM dmarc_scan_results WHERE {where}").fetchone()[0]
@@ -71,7 +73,8 @@ def analyze(db_path: str):
     print(f"Non-null MX record present: {mx:,} ({mx/total*100:.1f}%)")
 
     _section("DNS delegation signal (all analyzable domains)")
-    _stat(conn, total, "dnssec_signed = 1", "DS record present")
+    has_ds_record = metric_column(conn, "has_ds_record")
+    _stat(conn, total, f"{has_ds_record} = 1", "DS record present")
 
     if mx == 0:
         print("\nNo domains with MX found.")
@@ -114,7 +117,8 @@ def analyze(db_path: str):
     _stat(conn, mx, "has_mta_sts = 1", "MTA-STS TXT record present", base_where="has_mx = 1")
     _stat(conn, mx, "has_tlsrpt = 1", "TLS-RPT TXT record present", base_where="has_mx = 1")
     _stat(conn, mx, "has_caa = 1", "CAA record present", base_where="has_mx = 1")
-    _stat(conn, mx, "has_tlsa = 1", "TLSA record present", base_where="has_mx = 1")
+    has_tlsa_record = metric_column(conn, "has_tlsa_record")
+    _stat(conn, mx, f"{has_tlsa_record} = 1", "TLSA record present", base_where="has_mx = 1")
 
     conn.close()
 

@@ -21,6 +21,13 @@ TLSA, and MTA-STS TXT record presence precisely, describes DKIM selector
 findings as a provider-aware lower bound and key-length heuristic, and makes
 clear that it is not the canonical release exporter.
 
+Future scanner result objects use the explicit Python constructor fields
+`has_ds_record` and `has_tlsa_record`; the historical constructor names
+`dnssec_signed` and `has_tlsa` are intentionally not translated. The archived
+SQLite database remains readable without schema changes: consumers must use
+`dmarc_scanner.db.metric_column()` to resolve the canonical measurement names
+to its legacy columns.
+
 The underlying measurement consists of DNS measurements performed 17–19 August
 2026 over the normalized 12 April 2026 SWITCH `.ch` zone snapshot. This
 repository remains private until its release gate is satisfied; it is intended

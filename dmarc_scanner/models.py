@@ -57,8 +57,9 @@ class DmarcScanResult:
     dmarc_rua_domains: list = field(default_factory=list)  # domains rua= reports go to
     dmarc_ruf_domains: list = field(default_factory=list)  # domains ruf= reports go to
 
-    # DNSSEC
-    dnssec_signed: bool = False
+    # DNS delegation signal. This is deliberately a DS-record observation,
+    # not a claim that DNSSEC validation succeeded.
+    has_ds_record: bool = False
 
     # Nameservers — checked unconditionally like DNSSEC, since neither is
     # mail-specific. Stored raw; reclassify by provider later via UPDATE,
@@ -81,10 +82,16 @@ class DmarcScanResult:
     # The DNSSEC-anchored sibling of MTA-STS (same goal: enforce TLS on
     # inbound mail), fully passive-DNS-checkable unlike MTA-STS's *mode*
     # (which needs an HTTPS fetch and stays out of scope).
-    has_tlsa: bool = False
+    has_tlsa_record: bool = False
     tlsa_hosts_checked: list = field(default_factory=list)
     tlsa_hosts_found: list = field(default_factory=list)
 
-    # Error — non-empty means a DNS query failed for this domain; excluded
-    # from the resume "done" set (see dmarc_scanner/db.py) so it gets retried.
+    # Status of every DNS check actually attempted, keyed as "TYPE name".
+    # A retained error status makes a false/empty presence flag explicitly
+    # inconclusive rather than silently treating resolver failure as absence.
+    query_statuses: dict = field(default_factory=dict)
+
+    # Error — non-empty means one or more DNS checks failed for this domain;
+    # excluded from the resume "done" set (see dmarc_scanner/db.py) so it gets
+    # retried. query_statuses preserves the individual failures.
     error: str = ""

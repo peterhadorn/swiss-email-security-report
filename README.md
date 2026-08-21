@@ -46,5 +46,20 @@ Keep that database outside version control. The scanner source is MIT-licensed
 in `LICENSE`; licensing for a future aggregate dataset and figures is recorded
 with the release itself.
 
+Each scan writes a private adjacent `*.db.manifest.json` only after SQLite has
+committed, checkpointed, and closed. It records reproducibility metadata such
+as normalized-input and output checksums, resolver list, scanner revision,
+timestamps, runtime, and concurrency settings. The manifest is not a public
+release artifact and is ignored by Git along with the result database.
+
+Its input provenance distinguishes the normalized source list from the
+effective list after `--shuffle` (seed 42) and `--limit`; `--limit 0` is an
+intentional empty scan. It also records the complete public-resolver
+configuration and the scanner's Git dirty state. Legacy Python attributes
+`dnssec_signed` and `has_tlsa` are not accepted by the Python constructor;
+use `has_ds_record` and `has_tlsa_record`. Archived SQLite columns remain
+readable through the explicit `metric_column()` adapter and are never migrated
+in place.
+
 See `MIGRATION.md` and `provenance/2026-scan.json` for the scoped clean-history
 import and measurement provenance.

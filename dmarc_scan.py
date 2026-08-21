@@ -12,11 +12,17 @@ import logging
 import random
 import sqlite3
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dmarc_scanner import resolve
-from dmarc_scanner.db import create_table, get_done_domains, insert_result
+from dmarc_scanner.db import create_table, get_done_domains, insert_result, validate_output_path
 from dmarc_scanner.models import DmarcScanResult
+from dmarc_scanner.provenance import (
+    manifest_path_for,
+    scanner_git_provenance,
+    write_scan_manifest,
+)
 from dmarc_scanner.resolve import query as real_query, query_batch as real_query_batch
 from dmarc_scanner.scan import scan_domain
 
@@ -29,6 +35,23 @@ REPORT_EVERY = 2000
 def _health_path_for(db_path: str) -> str:
     path = Path(db_path)
     return str(path.with_name(f"{path.stem}_health.json"))
+
+
+def _finalize_database(conn: sqlite3.Connection) -> None:
+    """Commit and checkpoint before closing so a sidecar can hash final bytes."""
+    try:
+        conn.commit()
+        rows = conn.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchall()
+        if len(rows) != 1:
+            raise RuntimeError("checkpoint incomplete: SQLite returned no checkpoint status")
+        busy, log_frames, checkpointed_frames = rows[0]
+        if busy != 0 or log_frames != checkpointed_frames or log_frames != 0:
+            raise RuntimeError(
+                "checkpoint incomplete: WAL remains pending "
+                f"(busy={busy}, log={log_frames}, checkpointed={checkpointed_frames})"
+            )
+    finally:
+        conn.close()
 
 
 def run(
@@ -51,6 +74,10 @@ def run(
     if query_batch_fn is None and using_real_query:
         query_batch_fn = real_query_batch
 
+    # A stale sidecar can never be allowed to describe an output about to be
+    # changed, including a run that subsequently fails.
+    manifest_path_for(db_path).unlink(missing_ok=True)
+    validate_output_path(db_path)
     conn = sqlite3.connect(db_path)
     conn.execute("PRAGMA journal_mode=WAL")
     if not resume:
@@ -70,7 +97,7 @@ def run(
     total = len(domains)
     if total == 0:
         logger.info("Nothing to scan.")
-        conn.close()
+        _finalize_database(conn)
         return
 
     scanned = 0
@@ -131,8 +158,7 @@ def run(
             conn.commit()
             i += BATCH_SIZE
 
-    conn.commit()
-    conn.close()
+    _finalize_database(conn)
 
     elapsed = time.monotonic() - start_time
     logger.info(
@@ -168,18 +194,27 @@ def main():
     )
     parser.add_argument("--no-resume", action="store_true")
     parser.add_argument("--shuffle", action="store_true", help="Randomize domain order (seed=42)")
-    parser.add_argument("--limit", type=int, help="Limit domains (testing)")
+    parser.add_argument(
+        "--limit", type=int,
+        help="Scan at most N normalized input domains; 0 intentionally writes an empty scan.",
+    )
 
     args = parser.parse_args()
+
+    # Clear an old sidecar before any configuration, input, Git, or database
+    # failure path. A manifest must never survive the attempt it no longer
+    # describes.
+    manifest_path_for(args.output).unlink(missing_ok=True)
 
     if args.batch_pool_size is not None:
         resolve.configure_batch_pool_size(args.batch_pool_size)
 
-    domains = load_domains(args.input)
+    input_domains = load_domains(args.input)
+    domains = list(input_domains)
     if args.shuffle:
         random.seed(42)
         random.shuffle(domains)
-    if args.limit:
+    if args.limit is not None:
         domains = domains[:args.limit]
 
     logger.info(
@@ -187,12 +222,32 @@ def main():
         f"batch_pool_size={args.batch_pool_size or 'default'}"
     )
 
+    scanner_revision, scanner_dirty = scanner_git_provenance()
+    started_at = datetime.now(timezone.utc)
     run(
         domains,
         args.output,
         concurrency=args.concurrency,
         resume=not args.no_resume,
     )
+    finished_at = datetime.now(timezone.utc)
+    manifest_path = write_scan_manifest(
+        args.output,
+        source_input_lines=input_domains,
+        effective_input_lines=domains,
+        scanner_git_revision=scanner_revision,
+        scanner_git_dirty=scanner_dirty,
+        resolver_configuration=resolve.resolver_configuration(),
+        started_at=started_at,
+        finished_at=finished_at,
+        concurrency=args.concurrency,
+        batch_pool_size=resolve.batch_pool_size(),
+        retry_resume_mode=("fresh" if args.no_resume else "resume_retry_partial_errors"),
+        limit=args.limit,
+        shuffle=args.shuffle,
+        shuffle_seed=42 if args.shuffle else None,
+    )
+    logger.info("Wrote private scan manifest: %s", manifest_path)
 
 
 if __name__ == "__main__":

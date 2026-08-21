@@ -45,7 +45,7 @@ def test_domain_exists_without_mx_checks_dnssec_ns_spf_and_dmarc_but_not_dkim_or
 
     assert result.domain_exists is True
     assert result.has_mx is False
-    assert result.dnssec_signed is True
+    assert result.has_ds_record is True
     assert result.ns_hosts == ["ns1.example.ch", "ns2.example.ch"]
     assert result.has_spf is True
     assert result.spf_all_mechanism == "hardfail"
@@ -140,7 +140,7 @@ def test_full_domain_with_every_record_present():
     assert result.has_mx is True
     assert result.mx_hosts == ["secure-ch.mail.protection.outlook.com"]
     assert result.mx_provider == "microsoft365"
-    assert result.dnssec_signed is True
+    assert result.has_ds_record is True
 
     assert result.has_spf is True
     assert result.spf_all_mechanism == "hardfail"
@@ -403,6 +403,52 @@ def test_transient_dns_error_on_aaaa_after_noanswer_a_is_not_flagged_as_dangling
 
     assert result.mx_hosts_unresolvable == []
     assert result.mx_unresolvable is False
+    assert result.query_statuses["AAAA mail.flaky-resolver-aaaa.ch"] == "error"
+    assert result.error == "query_errors: AAAA mail.flaky-resolver-aaaa.ch"
+
+
+def test_whole_batch_failure_marks_each_check_as_error():
+    domain = "batch-failure.ch"
+
+    def query(name, rdtype):
+        return ("ok", ["10 mail.batch-failure.ch."]) if rdtype == "MX" else ("noanswer", [])
+
+    def failed_batch(_pairs):
+        raise RuntimeError("pool failed")
+
+    result = scan_domain(domain, query, failed_batch)
+
+    assert result.query_statuses["DS batch-failure.ch"] == "error"
+    assert result.query_statuses["TXT _dmarc.batch-failure.ch"] == "error"
+    assert "DS batch-failure.ch" in result.error
+
+
+def test_missing_or_malformed_batch_results_are_persisted_as_query_errors():
+    domain = "bad-batch.ch"
+
+    def query(name, rdtype):
+        return ("ok", ["10 mail.bad-batch.ch."]) if rdtype == "MX" else ("noanswer", [])
+
+    def malformed_batch(pairs):
+        return {pairs[0]: "not a DNS response"}
+
+    result = scan_domain(domain, query, malformed_batch)
+
+    assert result.query_statuses["DS bad-batch.ch"] == "error"
+    assert result.query_statuses["NS bad-batch.ch"] == "error"
+    assert result.query_statuses["TXT _dmarc.bad-batch.ch"] == "error"
+
+
+def test_non_mapping_batch_result_marks_every_affected_check_as_error():
+    domain = "non-mapping-batch.ch"
+
+    def query(name, rdtype):
+        return ("ok", ["10 mail.non-mapping-batch.ch."]) if rdtype == "MX" else ("noanswer", [])
+
+    result = scan_domain(domain, query, lambda pairs: [])
+
+    assert result.query_statuses["DS non-mapping-batch.ch"] == "error"
+    assert result.query_statuses["TXT _dmarc.non-mapping-batch.ch"] == "error"
 
 
 def test_tlsa_found_for_mx_host():
@@ -424,7 +470,7 @@ def test_tlsa_found_for_mx_host():
 
     assert result.tlsa_hosts_checked == ["mail.dane-enabled.ch"]
     assert result.tlsa_hosts_found == ["mail.dane-enabled.ch"]
-    assert result.has_tlsa is True
+    assert result.has_tlsa_record is True
 
 
 def test_tlsa_absent_when_no_tlsa_record():
@@ -446,7 +492,7 @@ def test_tlsa_absent_when_no_tlsa_record():
 
     assert result.tlsa_hosts_checked == ["mail.no-dane.ch"]
     assert result.tlsa_hosts_found == []
-    assert result.has_tlsa is False
+    assert result.has_tlsa_record is False
 
 
 # --- query_batch integration ---------------------------------------------

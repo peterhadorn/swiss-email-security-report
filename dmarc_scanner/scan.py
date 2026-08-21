@@ -32,14 +32,63 @@ def scan_domain(domain: str, query, query_batch=None) -> DmarcScanResult:
         query_batch = lambda pairs: {(n, r): query(n, r) for n, r in pairs}
 
     result = DmarcScanResult(domain=domain)
+    query_errors = []
 
-    mx_status, mx_answers = query(domain, "MX")
+    def safe_response(response):
+        if not isinstance(response, tuple) or len(response) != 2:
+            return "error", []
+        status, answers = response
+        if status not in {"ok", "nxdomain", "noanswer", "error"} or not isinstance(answers, list):
+            return "error", []
+        return status, answers
+
+    def query_key(name: str, rdtype: str) -> str:
+        return f"{rdtype} {name}"
+
+    def observe(name: str, rdtype: str):
+        try:
+            status, answers = safe_response(query(name, rdtype))
+        except Exception:
+            status, answers = "error", []
+        key = query_key(name, rdtype)
+        result.query_statuses[key] = status
+        if status == "error":
+            query_errors.append(key)
+        return status, answers
+
+    def observe_batch(pairs: list) -> dict:
+        try:
+            raw_answers = query_batch(pairs)
+        except Exception:
+            raw_answers = {}
+        answers = {}
+        for name, rdtype in pairs:
+            response = raw_answers.get((name, rdtype)) if isinstance(raw_answers, dict) else None
+            status, records = safe_response(response)
+            answers[(name, rdtype)] = (status, records)
+            key = query_key(name, rdtype)
+            result.query_statuses[key] = status
+            if status == "error":
+                query_errors.append(key)
+        return answers
+
+    def finish() -> DmarcScanResult:
+        if query_errors:
+            # Retain the legacy top-level MX failure summary for existing
+            # scanner consumers; query_statuses still carries the exact
+            # status. All later/partial failures use the detailed summary.
+            if query_errors == [query_key(domain, "MX")]:
+                result.error = "mx_query_error"
+            else:
+                result.error = f"query_errors: {', '.join(query_errors)}"
+        return result
+
+    mx_status, mx_answers = observe(domain, "MX")
     if mx_status == "nxdomain":
         result.domain_exists = False
-        return result
+        return finish()
     if mx_status == "error":
-        result.error = "mx_query_error"
-        return result
+        return finish()
 
     result.domain_exists = True
 
@@ -62,7 +111,7 @@ def scan_domain(domain: str, query, query_batch=None) -> DmarcScanResult:
     # DNSSEC, NS, SPF, the legacy SPF RR type, and DMARC are all mutually
     # independent (none needs another's result) and all run regardless of
     # MX — batched into one concurrent round instead of 5 sequential ones.
-    group_a = query_batch([
+    group_a = observe_batch([
         (domain, "DS"),
         (domain, "NS"),
         (domain, "TXT"),
@@ -71,7 +120,7 @@ def scan_domain(domain: str, query, query_batch=None) -> DmarcScanResult:
     ])
 
     ds_status, ds_answers = group_a[(domain, "DS")]
-    result.dnssec_signed = ds_status == "ok" and bool(ds_answers)
+    result.has_ds_record = ds_status == "ok" and bool(ds_answers)
 
     ns_status, ns_answers = group_a[(domain, "NS")]
     if ns_status == "ok":
@@ -112,7 +161,7 @@ def scan_domain(domain: str, query, query_batch=None) -> DmarcScanResult:
         result.dmarc_policy = "absent"
 
     if not result.has_mx:
-        return result
+        return finish()
 
     # "error" (a transient resolver failure) is deliberately NOT treated as
     # confirmation of non-existence — only "nxdomain" (the name genuinely
@@ -123,7 +172,7 @@ def scan_domain(domain: str, query, query_batch=None) -> DmarcScanResult:
     # spirit as the rest of the scanner never turning a query error into an
     # affirmative security claim.
     for host in result.mx_hosts:
-        a_status, a_answers = query(host, "A")
+        a_status, a_answers = observe(host, "A")
         if a_status == "ok" and a_answers:
             continue
         if a_status == "nxdomain":
@@ -131,7 +180,7 @@ def scan_domain(domain: str, query, query_batch=None) -> DmarcScanResult:
             continue
         if a_status == "error":
             continue
-        aaaa_status, aaaa_answers = query(host, "AAAA")
+        aaaa_status, aaaa_answers = observe(host, "AAAA")
         if aaaa_status == "ok" and aaaa_answers:
             continue
         if aaaa_status == "error":
@@ -141,7 +190,7 @@ def scan_domain(domain: str, query, query_batch=None) -> DmarcScanResult:
 
     selectors = dkim_selectors_for_provider(result.mx_provider)
     result.dkim_selectors_checked = selectors
-    dkim_results = query_batch(
+    dkim_results = observe_batch(
         [(f"{selector}._domainkey.{domain}", "TXT") for selector in selectors]
     )
     found_selectors = []
@@ -167,7 +216,7 @@ def scan_domain(domain: str, query, query_batch=None) -> DmarcScanResult:
 
     # BIMI, MTA-STS, TLS-RPT, and CAA are four mutually independent checks —
     # none depends on another's result, so batch them into one round too.
-    group_c = query_batch([
+    group_c = observe_batch([
         (f"default._bimi.{domain}", "TXT"),
         (f"_mta-sts.{domain}", "TXT"),
         (f"_smtp._tls.{domain}", "TXT"),
@@ -204,11 +253,11 @@ def scan_domain(domain: str, query, query_batch=None) -> DmarcScanResult:
     tlsa_found = []
     for host in result.mx_hosts:
         tlsa_checked.append(host)
-        tlsa_status, tlsa_answers = query(f"_25._tcp.{host}", "TLSA")
+        tlsa_status, tlsa_answers = observe(f"_25._tcp.{host}", "TLSA")
         if tlsa_status == "ok" and tlsa_answers:
             tlsa_found.append(host)
     result.tlsa_hosts_checked = tlsa_checked
     result.tlsa_hosts_found = tlsa_found
-    result.has_tlsa = bool(tlsa_found)
+    result.has_tlsa_record = bool(tlsa_found)
 
-    return result
+    return finish()

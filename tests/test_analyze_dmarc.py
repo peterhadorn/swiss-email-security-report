@@ -9,15 +9,15 @@ def _seed(db_path):
     conn = sqlite3.connect(db_path)
     create_table(conn)
     rows = [
-        DmarcScanResult(domain="nomail.ch", has_mx=False, dnssec_signed=False),
+        DmarcScanResult(domain="nomail.ch", has_mx=False, has_ds_record=False),
         # Even when an errored row contains stale or partial flags, it must
         # affect only the reported error count, never a descriptive metric.
         DmarcScanResult(
             domain="broken.ch", error="mx_query_error", has_mx=True,
             mx_provider="contaminated", has_spf=True, has_dkim=True,
             dkim_weak_key=True, has_dmarc=True, dmarc_policy="reject",
-            dnssec_signed=True, has_bimi=True, has_mta_sts=True,
-            has_tlsrpt=True, has_caa=True, has_tlsa=True,
+            has_ds_record=True, has_bimi=True, has_mta_sts=True,
+            has_tlsrpt=True, has_caa=True, has_tlsa_record=True,
         ),
         DmarcScanResult(
             domain="unprotected.ch", has_mx=True, mx_provider="hostpoint",
@@ -34,8 +34,8 @@ def _seed(db_path):
             has_spf=True, spf_all_mechanism="hardfail", spf_lookup_count=9,
             spf_near_limit=True, has_dkim=True, dkim_weak_key=True,
             has_dmarc=True, dmarc_policy="reject", dmarc_rua=True, dmarc_ruf=True,
-            dnssec_signed=True, has_bimi=True, has_mta_sts=True, has_tlsrpt=True,
-            has_tlsa=True,
+            has_ds_record=True, has_bimi=True, has_mta_sts=True, has_tlsrpt=True,
+            has_tlsa_record=True,
         ),
     ]
     for row in rows:

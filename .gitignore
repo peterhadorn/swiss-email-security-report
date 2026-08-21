@@ -6,6 +6,7 @@ data/*
 !data/releases/**
 *.db
 *.db-*
+*.db.manifest.json
 *.sqlite*
 *.log
 zone-inputs/

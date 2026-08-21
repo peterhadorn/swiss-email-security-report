@@ -58,18 +58,20 @@ def test_list_fields_round_trip_as_json(conn):
         dkim_selectors_checked=["selector1", "selector2"],
         dkim_selectors_found=["selector1"],
         caa_records=['0 issue "letsencrypt.org"'],
+        query_statuses={"MX a.ch": "ok", "DS a.ch": "noanswer"},
     )
     insert_result(conn, result)
     conn.commit()
 
     row = conn.execute(
-        "SELECT mx_hosts, dkim_selectors_checked, dkim_selectors_found, caa_records "
+        "SELECT mx_hosts, dkim_selectors_checked, dkim_selectors_found, caa_records, query_statuses "
         "FROM dmarc_scan_results WHERE domain = 'a.ch'"
     ).fetchone()
     assert json.loads(row[0]) == ["mx1.example.ch", "mx2.example.ch"]
     assert json.loads(row[1]) == ["selector1", "selector2"]
     assert json.loads(row[2]) == ["selector1"]
     assert json.loads(row[3]) == ['0 issue "letsencrypt.org"']
+    assert json.loads(row[4]) == {"MX a.ch": "ok", "DS a.ch": "noanswer"}
 
 
 def test_dmarc_report_domain_list_fields_round_trip_as_json(conn):
@@ -99,3 +101,14 @@ def test_get_done_domains_excludes_errored_rows(conn):
     conn.commit()
 
     assert get_done_domains(conn) == {"ok.ch"}
+
+
+def test_get_done_domains_excludes_rows_with_partial_query_errors(conn):
+    create_table(conn)
+    insert_result(conn, DmarcScanResult(
+        domain="partial.ch",
+        query_statuses={"DS partial.ch": "error"},
+    ))
+    conn.commit()
+
+    assert get_done_domains(conn) == set()

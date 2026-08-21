@@ -1,8 +1,11 @@
 import sqlite3
 
+import pytest
+
 import dmarc_scan
 from dmarc_scan import load_domains, run
 from dmarc_scanner.db import get_done_domains
+from dmarc_scanner.provenance import manifest_path_for
 
 
 def test_load_domains_strips_blank_lines_and_trailing_dots(tmp_path):
@@ -136,3 +139,45 @@ def test_run_with_fake_query_fn_never_uses_the_real_query_batch(tmp_path, monkey
     conn = sqlite3.connect(db_path)
     assert get_done_domains(conn) == {"a.ch"}
     conn.close()
+
+
+def test_run_refuses_legacy_output_before_wal_or_fresh_drop_and_removes_manifest(tmp_path):
+    db_path = tmp_path / "legacy.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "CREATE TABLE dmarc_scan_results (domain TEXT PRIMARY KEY, dnssec_signed INTEGER, has_tlsa INTEGER, error TEXT)"
+    )
+    conn.execute("INSERT INTO dmarc_scan_results VALUES ('archived.ch', 1, 1, '')")
+    conn.commit()
+    conn.close()
+    before = db_path.read_bytes()
+    manifest_path_for(db_path).write_text('{"stale": true}\n')
+
+    with pytest.raises(RuntimeError, match="legacy output database"):
+        run(["new.ch"], str(db_path), concurrency=1, resume=False, query_fn=_fake_query_factory())
+
+    assert db_path.read_bytes() == before
+    conn = sqlite3.connect(db_path)
+    assert conn.execute("SELECT domain FROM dmarc_scan_results").fetchall() == [("archived.ch",)]
+    conn.close()
+    assert not manifest_path_for(db_path).exists()
+
+
+def test_finalize_database_rejects_busy_checkpoint_and_closes_connection(tmp_path):
+    db_path = tmp_path / "busy.db"
+    writer = sqlite3.connect(db_path)
+    writer.execute("PRAGMA journal_mode=WAL")
+    writer.execute("CREATE TABLE records (value TEXT)")
+    writer.commit()
+    reader = sqlite3.connect(db_path)
+    reader.execute("BEGIN")
+    reader.execute("SELECT * FROM records").fetchall()
+    writer.execute("INSERT INTO records VALUES ('uncheckpointed')")
+    writer.commit()
+
+    with pytest.raises(RuntimeError, match="checkpoint incomplete"):
+        dmarc_scan._finalize_database(writer)
+
+    with pytest.raises(sqlite3.ProgrammingError):
+        writer.execute("SELECT 1")
+    reader.close()

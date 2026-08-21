@@ -126,6 +126,20 @@ def test_query_batch_preserves_per_pair_status_independently(monkeypatch):
     assert results[("missing.ch", "MX")] == ("nxdomain", [])
 
 
+def test_query_batch_converts_per_future_exceptions_to_pair_errors(monkeypatch):
+    def exploding_query(name, rdtype):
+        if name == "broken.ch":
+            raise RuntimeError("worker failed")
+        return "noanswer", []
+
+    monkeypatch.setattr(resolve_module, "query", exploding_query)
+
+    results = resolve_module.query_batch([("good.ch", "MX"), ("broken.ch", "MX")])
+
+    assert results[("good.ch", "MX")] == ("noanswer", [])
+    assert results[("broken.ch", "MX")] == ("error", [])
+
+
 def test_configure_batch_pool_size_updates_before_pool_created(monkeypatch):
     monkeypatch.setattr(resolve_module, "_batch_pool", None)
     original_size = resolve_module._BATCH_POOL_SIZE

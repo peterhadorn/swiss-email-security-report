@@ -10,6 +10,7 @@ import threading
 
 import dns.exception
 import dns.resolver
+import dns.version
 
 PUBLIC_NAMESERVERS = ["1.1.1.1", "8.8.8.8", "9.9.9.9", "1.0.0.1", "8.8.4.4"]
 QUERY_TIMEOUT = 4.0   # per-nameserver-attempt timeout, seconds
@@ -99,6 +100,23 @@ def configure_batch_pool_size(size: int) -> None:
     _BATCH_POOL_SIZE = size
 
 
+def batch_pool_size() -> int:
+    """Return the configured shared within-domain query-batch pool size."""
+    return _BATCH_POOL_SIZE
+
+
+def resolver_configuration() -> dict:
+    """Return all resolver settings that materially affect a scan."""
+    return {
+        "nameservers": list(PUBLIC_NAMESERVERS),
+        "rotate": True,
+        "timeout_seconds": QUERY_TIMEOUT,
+        "lifetime_seconds": QUERY_LIFETIME,
+        "cache_policy": "disabled",
+        "dnspython_version": dns.version.version,
+    }
+
+
 def _get_batch_pool() -> "concurrent.futures.ThreadPoolExecutor":
     global _batch_pool
     if _batch_pool is None:
@@ -128,5 +146,10 @@ def query_batch(pairs: list) -> dict:
     results = {}
     for future in concurrent.futures.as_completed(futures):
         pair = futures[future]
-        results[pair] = future.result()
+        try:
+            results[pair] = future.result()
+        except Exception:
+            # A per-future failure is a DNS-query error for this exact pair,
+            # not a reason to discard every other completed query.
+            results[pair] = ("error", [])
     return results
