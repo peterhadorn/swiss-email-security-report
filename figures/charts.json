@@ -1,0 +1,39 @@
+{
+  "charts": [
+    {
+      "id": "dmarc-policy-observations",
+      "kind": "partition",
+      "denominator_metric_id": "mx.present",
+      "metric_ids": ["dmarc.reject", "dmarc.quarantine", "dmarc.none", "dmarc.no_supported_effective_policy"],
+      "caveat_key": "dmarc"
+    },
+    {
+      "id": "spf-dkim-observations",
+      "kind": "comparison",
+      "denominator_metric_id": "mx.present",
+      "metric_ids": ["spf.present", "dkim.selector_observed"],
+      "nonexclusive": true,
+      "caveat_key": "spf_dkim"
+    },
+    {
+      "id": "dns-transport-signals",
+      "kind": "signals",
+      "metric_ids": ["ds.record_present", "tlsa.record_present", "bimi.record_present", "mta_sts.txt_present", "tls_rpt.record_present", "caa.record_present"],
+      "denominator_metric_ids": {"ds.record_present": "population.analyzable", "tlsa.record_present": "mx.present", "bimi.record_present": "mx.present", "mta_sts.txt_present": "mx.present", "tls_rpt.record_present": "mx.present", "caa.record_present": "mx.present"},
+      "caveat_key": "signals"
+    },
+    {
+      "id": "mx-hostname-fingerprint-distribution",
+      "kind": "provider_distribution",
+      "denominator_metric_id": "mx.present",
+      "groups": [
+        {"id": "hostpoint", "metric_ids": ["mx.provider.hostpoint"]},
+        {"id": "infomaniak", "metric_ids": ["mx.provider.infomaniak"]},
+        {"id": "microsoft365", "metric_ids": ["mx.provider.microsoft365"]},
+        {"id": "google_workspace", "metric_ids": ["mx.provider.google_workspace"]},
+        {"id": "remainder", "metric_ids": ["mx.provider.cyon", "mx.provider.swisscom", "mx.provider.init7", "mx.provider.greench", "mx.provider.vtx", "mx.provider.metanet", "mx.provider.protonmail", "mx.provider.mailbox_org", "mx.provider.gmx", "mx.provider.ovh", "mx.provider.mimecast", "mx.provider.proofpoint", "mx.provider.barracuda", "mx.provider.swizzonic", "mx.provider.netzone", "mx.provider.iway", "mx.provider.hosttech", "mx.provider.tophost", "mx.provider.self_hosted", "mx.provider.other", "mx.provider.unknown"]}
+      ],
+      "caveat_key": "providers"
+    }
+  ]
+}

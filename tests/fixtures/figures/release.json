@@ -1,0 +1,8 @@
+{
+  "version": "v2026.08.2",
+  "measurement_period": "2026-08-21/2026-08-22",
+  "repository_url": "https://github.com/peterhadorn/swiss-email-security-report",
+  "license": "CC BY 4.0",
+  "metrics_sha256": "30dafd3dba117eaef9cf34d3bc776809778fd88928e39ef10d2cad794abc3f8d",
+  "metric_count": 40
+}
