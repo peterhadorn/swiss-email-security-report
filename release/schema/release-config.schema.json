@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/peterhadorn/swiss-email-security-report/main/release/schema/release-config.schema.json",
+  "title": "Pinned Swiss email-security release configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["release_version", "doi_approval_key_fingerprint", "source_snapshot_date", "source_input_normalized_sha256", "source_input_normalized_line_count", "root_scanner_git_revision", "measurement_core_algorithm", "measurement_core_files", "root_measurement_core_sha256", "final_measurement_core_sha256", "measurement_core_transition", "resolver_configuration", "execution", "root_run", "retry_run"],
+  "properties": {
+    "release_version": {"const": "v2026.08.2"},
+    "doi_approval_key_fingerprint": {"oneOf": [{"const": "UNCONFIGURED"}, {"type": "string", "pattern": "^[0-9a-f]{64}$"}]},
+    "source_snapshot_date": {"const": "2026-04-12"},
+    "source_input_normalized_sha256": {"const": "be742a42b89dbac80b5296316d35a2d245383e31d15d5df0b1242af8ec9e07c8"},
+    "source_input_normalized_line_count": {"const": 2459127},
+    "root_scanner_git_revision": {"const": "48eba50b7b2e50d9c16abf4a7807a3ff4d693611"},
+    "measurement_core_algorithm": {"const": "sha256-length-prefixed-path-and-content-v1"},
+    "measurement_core_files": {"const": ["dmarc_scanner/db.py", "dmarc_scanner/models.py", "dmarc_scanner/parsers.py", "dmarc_scanner/providers.py", "dmarc_scanner/resolve.py", "dmarc_scanner/scan.py"]},
+    "root_measurement_core_sha256": {"const": "c464dbd2e1698685d95b8b45390b8e863abf0e1dc8bb3e86de56411d17fa0486"},
+    "final_measurement_core_sha256": {"const": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18"},
+    "measurement_core_transition": {"const": {"attestation_id": "5ff4b49ac61ed6b1e3c5246748a8657681359ce7c457530d751b4e295031171f", "from_measurement_core_sha256": "c464dbd2e1698685d95b8b45390b8e863abf0e1dc8bb3e86de56411d17fa0486", "to_measurement_core_sha256": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18", "changed_file": "dmarc_scanner/db.py", "old_file_sha256": "8e93ca54f9460ed29d05d6387f3c6b1a1fe57eb57cd660642f46de1d9f934cec", "new_file_sha256": "2a40ee7fb6ffc7ef313364fce1bba4f4f156165e51353931c51499be9634e031", "reason": "read-only SQLite URI safety fix in validate_output_path only"}},
+    "resolver_configuration": {"$ref": "#/$defs/resolver"},
+    "root_run": {"type": "object", "additionalProperties": false, "required": ["mode", "input_order"], "properties": {"mode": {"const": "fresh"}, "input_order": {"const": "seeded_shuffle_then_limit"}}},
+    "retry_run": {"type": "object", "additionalProperties": false, "required": ["mode"], "properties": {"mode": {"const": "resume_retry_partial_errors"}}},
+    "execution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["limit", "shuffle", "shuffle_seed", "concurrency", "batch_pool_size"],
+      "properties": {
+        "limit": {"type": "null"}, "shuffle": {"const": true},
+        "shuffle_seed": {"const": 42}, "concurrency": {"const": 120},
+        "batch_pool_size": {"const": 300}
+      }
+    }
+  },
+  "$defs": {
+    "resolver": {
+      "type": "object", "additionalProperties": false,
+      "required": ["nameservers", "rotate", "timeout_seconds", "lifetime_seconds", "cache_policy", "dnspython_version"],
+      "properties": {
+        "nameservers": {"const": ["1.1.1.1", "8.8.8.8", "9.9.9.9", "1.0.0.1", "8.8.4.4"]},
+        "rotate": {"const": true}, "timeout_seconds": {"const": 4.0},
+        "lifetime_seconds": {"const": 6.0}, "cache_policy": {"const": "disabled"},
+        "dnspython_version": {"const": "2.8.0"}
+      }
+    }
+  }
+}

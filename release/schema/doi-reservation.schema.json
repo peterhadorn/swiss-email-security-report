@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/peterhadorn/swiss-email-security-report/main/release/schema/doi-reservation.schema.json",
+  "title": "Trusted external DOI reservation verification attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["provider", "record_id", "doi", "doi_url", "reserved_at_utc", "release_version", "external_verification"],
+  "properties": {
+    "provider": {"const": "zenodo"},
+    "record_id": {"type": "integer", "minimum": 1},
+    "doi": {"type": "string", "pattern": "^10\\.5281/zenodo\\.[1-9][0-9]*$"},
+    "doi_url": {"type": "string", "pattern": "^https://doi\\.org/10\\.5281/zenodo\\.[1-9][0-9]*$"},
+    "reserved_at_utc": {"type": "string", "format": "date-time"},
+    "release_version": {"const": "v2026.08.2"},
+    "external_verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["verification_version", "authority_name", "approver_name", "approver_identity", "approver_role", "scope", "signature_algorithm", "public_key_fingerprint_sha256", "signature_base64"],
+      "properties": {
+        "verification_version": {"const": 1},
+        "authority_name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z .,'-]{2,120}$"},
+        "approver_name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z .,'-]{2,120}$"},
+        "approver_identity": {"type": "string", "pattern": "^(?:staff:[a-z][a-z0-9._-]{2,63}|orcid:[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9X]{4})$"},
+        "approver_role": {"const": "release-owner"},
+        "scope": {"const": "offline-zenodo-reservation-verification-v1"},
+        "signature_algorithm": {"const": "ed25519-openssl-pkeyutl-raw-v1"},
+        "public_key_fingerprint_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "signature_base64": {"type": "string", "pattern": "^[A-Za-z0-9+/]+={0,2}$"}
+      }
+    }
+  }
+}

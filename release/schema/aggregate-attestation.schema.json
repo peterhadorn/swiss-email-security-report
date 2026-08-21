@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/peterhadorn/swiss-email-security-report/main/release/schema/aggregate-attestation.schema.json",
+  "title": "Aggregate extraction attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["attestation_version", "release_version", "measurement_interval", "source_input_normalized_sha256", "source_input_normalized_line_count", "root_measurement_core_sha256", "final_measurement_core_sha256", "measurement_core_transition_attestation_id", "final_run_identifier", "final_manifest_sha256", "final_database_sha256", "final_database_size_bytes", "snapshot_method", "metric_count", "metric_files"],
+  "properties": {
+    "attestation_version": {"const": 1},
+    "release_version": {"const": "v2026.08.2"},
+    "measurement_interval": {"$ref": "#/$defs/interval"},
+    "source_input_normalized_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_input_normalized_line_count": {"type": "integer", "minimum": 1},
+    "root_measurement_core_sha256": {"const": "c464dbd2e1698685d95b8b45390b8e863abf0e1dc8bb3e86de56411d17fa0486"},
+    "final_measurement_core_sha256": {"const": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18"},
+    "measurement_core_transition_attestation_id": {"const": "5ff4b49ac61ed6b1e3c5246748a8657681359ce7c457530d751b4e295031171f"},
+    "final_run_identifier": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "final_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "final_database_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "final_database_size_bytes": {"type": "integer", "minimum": 1},
+    "snapshot_method": {"const": "single explicit read-only SQLite transaction; canonical and independent COUNT-only catalogues"},
+    "metric_count": {"type": "integer", "minimum": 1},
+    "metric_files": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/file"}}
+  },
+  "$defs": {
+    "interval": {"type": "object", "additionalProperties": false, "required": ["started_at_utc", "finished_at_utc"], "properties": {"started_at_utc": {"type": "string", "format": "date-time"}, "finished_at_utc": {"type": "string", "format": "date-time"}}},
+    "file": {"type": "object", "additionalProperties": false, "required": ["name", "sha256", "bytes"], "properties": {"name": {"enum": ["metrics.csv", "metrics.json"]}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "bytes": {"type": "integer", "minimum": 1}}}
+  }
+}

@@ -20,3 +20,12 @@ All notable changes to this project are documented in this file.
 - Python result-constructor terminology now explicitly uses `has_ds_record`
   and `has_tlsa_record`; only archived SQLite reads retain legacy-column
   compatibility through `metric_column()`.
+- A pinned `v2026.08.2` release pipeline now validates the complete scan chain,
+  stages aggregate-only metrics from one SQLite snapshot, atomically binds an
+  Ed25519-authenticated reserved Zenodo DOI, and seals the exact signed,
+  privacy-catalogued multilingual figure and documentation set with fresh
+  inodes and whole-tree checksums. Production DOI binding remains fail-closed
+  until its user-owned approval-key fingerprint is configured. Its installed
+  package includes the DE/FR/IT metric catalogues, and the finalizer enforces an
+  exact accessible SVG layer template plus normalized path, identifier, DNS,
+  address, and hash privacy boundaries.

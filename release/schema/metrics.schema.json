@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/peterhadorn/swiss-email-security-report/raw/codex/open-release/release/schema/metrics.schema.json",
+  "$id": "https://raw.githubusercontent.com/peterhadorn/swiss-email-security-report/main/release/schema/metrics.schema.json",
   "title": "Swiss Email Security Report aggregate metrics",
   "type": "object",
   "required": ["metrics"],

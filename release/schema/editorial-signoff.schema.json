@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/peterhadorn/swiss-email-security-report/main/release/schema/editorial-signoff.schema.json",
+  "title": "Scientific, privacy, and multilingual editorial signoff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["signoff_version", "release_version", "doi", "signed_at_utc", "reviewed_scope", "reviewed_artifact_count", "reviewed_artifact_root_sha256", "signoffs", "external_verification"],
+  "properties": {
+    "signoff_version": {"const": 1},
+    "release_version": {"const": "v2026.08.2"},
+    "doi": {"type": "string", "pattern": "^10\\.5281/zenodo\\.[1-9][0-9]*$"},
+    "signed_at_utc": {"type": "string", "format": "date-time"},
+    "reviewed_scope": {"const": "all-reviewed-public-content-and-stable-release-semantics-v1"},
+    "reviewed_artifact_count": {"type": "integer", "minimum": 1},
+    "reviewed_artifact_root_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "signoffs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scientific", "privacy", "de", "fr", "it"],
+      "properties": {
+        "scientific": {"$ref": "#/$defs/signoff"},
+        "privacy": {"$ref": "#/$defs/signoff"},
+        "de": {"$ref": "#/$defs/signoff"},
+        "fr": {"$ref": "#/$defs/signoff"},
+        "it": {"$ref": "#/$defs/signoff"}
+      }
+    },
+    "external_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verification_version", "authority_name", "approver_name", "approver_identity", "approver_role", "scope", "signature_algorithm", "public_key_fingerprint_sha256", "signature_base64"],
+      "properties": {
+        "verification_version": {"const": 1},
+        "authority_name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z .,'-]{2,120}$"},
+        "approver_name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z .,'-]{2,120}$"},
+        "approver_identity": {"type": "string", "pattern": "^(?:staff:[a-z][a-z0-9._-]{2,63}|orcid:[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9X]{4})$"},
+        "approver_role": {"const": "release-owner"},
+        "scope": {"const": "prospective-editorial-review-v1"},
+        "signature_algorithm": {"const": "ed25519-openssl-pkeyutl-raw-v1"},
+        "public_key_fingerprint_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "signature_base64": {"type": "string", "pattern": "^[A-Za-z0-9+/]+={0,2}$"}
+      }
+    }
+  },
+  "$defs": {
+    "signoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approved", "reviewer_name", "reviewer_identity", "reviewer_role", "signed_at_utc"],
+      "properties": {
+        "approved": {"const": true},
+        "reviewer_name": {"type": "string", "pattern": "^[A-Z][A-Za-z .,'-]{2,120}$"},
+        "reviewer_identity": {"type": "string", "pattern": "^(?:staff:[a-z][a-z0-9._-]{2,63}|orcid:[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9X]{4})$"},
+        "reviewer_role": {"type": "string", "enum": ["scientific-methods-reviewer", "privacy-reviewer", "german-language-editor", "french-language-editor", "italian-language-editor"]},
+        "signed_at_utc": {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}

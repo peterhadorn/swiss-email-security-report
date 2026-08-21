@@ -1,0 +1,56 @@
+{
+  "execution": {
+    "batch_pool_size": 300,
+    "concurrency": 120,
+    "limit": null,
+    "shuffle": true,
+    "shuffle_seed": 42
+  },
+  "measurement_core_algorithm": "sha256-length-prefixed-path-and-content-v1",
+  "measurement_core_files": [
+    "dmarc_scanner/db.py",
+    "dmarc_scanner/models.py",
+    "dmarc_scanner/parsers.py",
+    "dmarc_scanner/providers.py",
+    "dmarc_scanner/resolve.py",
+    "dmarc_scanner/scan.py"
+  ],
+  "final_measurement_core_sha256": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18",
+  "measurement_core_transition": {
+    "attestation_id": "5ff4b49ac61ed6b1e3c5246748a8657681359ce7c457530d751b4e295031171f",
+    "changed_file": "dmarc_scanner/db.py",
+    "from_measurement_core_sha256": "c464dbd2e1698685d95b8b45390b8e863abf0e1dc8bb3e86de56411d17fa0486",
+    "new_file_sha256": "2a40ee7fb6ffc7ef313364fce1bba4f4f156165e51353931c51499be9634e031",
+    "old_file_sha256": "8e93ca54f9460ed29d05d6387f3c6b1a1fe57eb57cd660642f46de1d9f934cec",
+    "reason": "read-only SQLite URI safety fix in validate_output_path only",
+    "to_measurement_core_sha256": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18"
+  },
+  "release_version": "v2026.08.2",
+  "doi_approval_key_fingerprint": "UNCONFIGURED",
+  "resolver_configuration": {
+    "cache_policy": "disabled",
+    "dnspython_version": "2.8.0",
+    "lifetime_seconds": 6.0,
+    "nameservers": [
+      "1.1.1.1",
+      "8.8.8.8",
+      "9.9.9.9",
+      "1.0.0.1",
+      "8.8.4.4"
+    ],
+    "rotate": true,
+    "timeout_seconds": 4.0
+  },
+  "retry_run": {
+    "mode": "resume_retry_partial_errors"
+  },
+  "root_run": {
+    "input_order": "seeded_shuffle_then_limit",
+    "mode": "fresh"
+  },
+  "root_scanner_git_revision": "48eba50b7b2e50d9c16abf4a7807a3ff4d693611",
+  "root_measurement_core_sha256": "c464dbd2e1698685d95b8b45390b8e863abf0e1dc8bb3e86de56411d17fa0486",
+  "source_input_normalized_line_count": 2459127,
+  "source_input_normalized_sha256": "be742a42b89dbac80b5296316d35a2d245383e31d15d5df0b1242af8ec9e07c8",
+  "source_snapshot_date": "2026-04-12"
+}

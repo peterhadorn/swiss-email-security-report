@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/peterhadorn/swiss-email-security-report/main/release/schema/release.schema.json",
+  "title": "Swiss Email Security Report release metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["release_version", "status", "generated_at_utc", "source_universe", "measurement_interval", "measurement_core", "resolver_configuration", "aggregate_row_accounting", "metric_count", "run_chain", "aggregate_files", "licenses", "canonical_repository_url", "correction_policy_url"],
+  "properties": {
+    "release_version": {"const": "v2026.08.2"},
+    "status": {"enum": ["staging", "doi_reserved", "sealed"]},
+    "generated_at_utc": {"type": "string", "format": "date-time"},
+    "source_universe": {
+      "type": "object", "additionalProperties": false,
+      "required": ["snapshot_date", "normalized_sha256", "normalized_line_count"],
+      "properties": {
+        "snapshot_date": {"const": "2026-04-12"},
+        "normalized_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "normalized_line_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "measurement_interval": {"$ref": "#/$defs/interval"},
+    "measurement_core": {
+      "type": "object", "additionalProperties": false,
+      "required": ["algorithm", "files", "root_sha256", "final_sha256", "transition"],
+      "properties": {
+        "algorithm": {"const": "sha256-length-prefixed-path-and-content-v1"},
+        "files": {"const": ["dmarc_scanner/db.py", "dmarc_scanner/models.py", "dmarc_scanner/parsers.py", "dmarc_scanner/providers.py", "dmarc_scanner/resolve.py", "dmarc_scanner/scan.py"]},
+        "root_sha256": {"const": "c464dbd2e1698685d95b8b45390b8e863abf0e1dc8bb3e86de56411d17fa0486"},
+        "final_sha256": {"const": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18"},
+        "transition": {"const": {"attestation_id": "5ff4b49ac61ed6b1e3c5246748a8657681359ce7c457530d751b4e295031171f", "from_measurement_core_sha256": "c464dbd2e1698685d95b8b45390b8e863abf0e1dc8bb3e86de56411d17fa0486", "to_measurement_core_sha256": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18", "changed_file": "dmarc_scanner/db.py", "old_file_sha256": "8e93ca54f9460ed29d05d6387f3c6b1a1fe57eb57cd660642f46de1d9f934cec", "new_file_sha256": "2a40ee7fb6ffc7ef313364fce1bba4f4f156165e51353931c51499be9634e031", "reason": "read-only SQLite URI safety fix in validate_output_path only"}}
+      }
+    },
+    "resolver_configuration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["nameservers", "rotate", "timeout_seconds", "lifetime_seconds", "cache_policy", "dnspython_version"],
+      "properties": {
+        "nameservers": {"const": ["1.1.1.1", "8.8.8.8", "9.9.9.9", "1.0.0.1", "8.8.4.4"]},
+        "rotate": {"const": true}, "timeout_seconds": {"const": 4.0},
+        "lifetime_seconds": {"const": 6.0}, "cache_policy": {"const": "disabled"},
+        "dnspython_version": {"const": "2.8.0"}
+      }
+    },
+    "aggregate_row_accounting": {"$ref": "#/$defs/accounting"},
+    "metric_count": {"type": "integer", "minimum": 1},
+    "run_chain": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/run"}},
+    "aggregate_files": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/aggregate_file"}},
+    "licenses": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "data_and_figures"],
+      "properties": {"code": {"const": "MIT"}, "data_and_figures": {"const": "CC BY 4.0"}}
+    },
+    "canonical_repository_url": {"const": "https://github.com/peterhadorn/swiss-email-security-report"},
+    "correction_policy_url": {"const": "https://ki-barometer.ch/datasets/ch-email-security-2026/corrections/"},
+    "doi": {"type": "string", "pattern": "^10\\.[0-9]{4,9}/[-._;()/:A-Za-z0-9]+$"},
+    "doi_reservation_file": {"$ref": "#/$defs/reservation_file"},
+    "inventory": {"type": "array", "minItems": 40, "items": {"$ref": "#/$defs/inventory_file"}}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "staging"}}, "required": ["status"]}, "then": {"not": {"anyOf": [{"required": ["doi"]}, {"required": ["doi_reservation_file"]}, {"required": ["inventory"]}]}}},
+    {"if": {"properties": {"status": {"const": "doi_reserved"}}, "required": ["status"]}, "then": {"required": ["doi", "doi_reservation_file"], "not": {"required": ["inventory"]}}},
+    {"if": {"properties": {"status": {"const": "sealed"}}, "required": ["status"]}, "then": {"required": ["doi", "doi_reservation_file", "inventory"]}}
+  ],
+  "$defs": {
+    "interval": {"type": "object", "additionalProperties": false, "required": ["started_at_utc", "finished_at_utc"], "properties": {"started_at_utc": {"type": "string", "format": "date-time"}, "finished_at_utc": {"type": "string", "format": "date-time"}}},
+    "accounting": {"type": "object", "additionalProperties": false, "required": ["total", "analyzable", "error"], "properties": {"total": {"type": "integer", "minimum": 0}, "analyzable": {"type": "integer", "minimum": 0}, "error": {"type": "integer", "minimum": 0}}},
+    "run": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sequence", "manifest_schema_version", "run_identifier", "manifest_sha256", "mode", "scanner_git_revision", "measurement_core_sha256", "started_at_utc", "finished_at_utc", "attempted_input_count", "database_pre", "database_post"],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 1}, "manifest_schema_version": {"enum": [1, 2]},
+        "run_identifier": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "mode": {"enum": ["fresh", "resume_retry_partial_errors"]}, "scanner_git_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "measurement_core_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "started_at_utc": {"type": "string", "format": "date-time"}, "finished_at_utc": {"type": "string", "format": "date-time"},
+        "attempted_input_count": {"type": "integer", "minimum": 0}, "database_pre": {"$ref": "#/$defs/accounting"}, "database_post": {"$ref": "#/$defs/accounting"}
+      }
+    },
+    "aggregate_file": {"type": "object", "additionalProperties": false, "required": ["name", "sha256", "bytes"], "properties": {"name": {"enum": ["metrics.json", "metrics.csv", "aggregate-attestation.json"]}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "bytes": {"type": "integer", "minimum": 1}}},
+    "reservation_file": {"type": "object", "additionalProperties": false, "required": ["name", "sha256", "bytes"], "properties": {"name": {"const": "doi-reservation.json"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "bytes": {"type": "integer", "minimum": 1}}},
+    "inventory_file": {"type": "object", "additionalProperties": false, "required": ["name", "sha256", "bytes", "media_type"], "properties": {"name": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "bytes": {"type": "integer", "minimum": 1}, "media_type": {"type": "string", "minLength": 3}}}
+  }
+}

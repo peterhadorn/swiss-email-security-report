@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/peterhadorn/swiss-email-security-report/main/release/schema/figures-manifest.schema.json",
+  "title": "Exact reviewed public figure inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest_version", "release_version", "figures"],
+  "properties": {
+    "manifest_version": {"const": 1},
+    "release_version": {"const": "v2026.08.2"},
+    "figures": {"type": "array", "minItems": 30, "maxItems": 30, "items": {"$ref": "#/$defs/figure"}}
+  },
+  "$defs": {
+    "interval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["started_at_utc", "finished_at_utc"],
+      "properties": {
+        "started_at_utc": {"type": "string", "format": "date-time"},
+        "finished_at_utc": {"type": "string", "format": "date-time"}
+      }
+    },
+    "figure": {
+      "type": "object", "additionalProperties": false,
+      "required": ["chart_id", "family", "path", "kind", "format", "mime_type", "width", "height", "locale", "metric_ids", "denominator_metric_ids", "title", "description", "caption", "source_snapshot_date", "source_snapshot_sha256", "source_label", "measurement_interval", "release_version", "license", "doi", "repository", "methodology_signals", "caveat_signals", "sha256", "bytes"],
+      "properties": {
+        "chart_id": {"enum": ["mail-authentication-overview", "dmarc-policy-observations", "dns-transport-signals", "mx-provider-fingerprints", "social-report-card"]},
+        "family": {"enum": ["authentication-adoption", "dmarc-policy", "dns-and-transport", "mx-provider-fingerprint", "report-card"]},
+        "path": {"type": "string", "pattern": "^figures/(?:mail-authentication-overview|dmarc-policy-observations|dns-transport-signals|mx-provider-fingerprints|social-report-card)\\.(?:de|fr|it)\\.(?:svg|png)$"},
+        "kind": {"enum": ["chart", "social"]},
+        "format": {"enum": ["svg", "png"]},
+        "mime_type": {"enum": ["image/svg+xml", "image/png"]},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "locale": {"enum": ["de", "fr", "it"]},
+        "metric_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9_.]+$"}},
+        "denominator_metric_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[a-z0-9_.]+$"}},
+        "title": {"type": "string", "minLength": 12},
+        "description": {"type": "string", "minLength": 20},
+        "caption": {"type": "string", "minLength": 30},
+        "source_snapshot_date": {"const": "2026-04-12"},
+        "source_snapshot_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_label": {"enum": ["Quelle: Snapshot der SWITCH-Zone .ch vom 12.04.2026.", "Source : instantané de la zone .ch de SWITCH du 12.04.2026.", "Fonte: istantanea della zona .ch di SWITCH del 12.04.2026."]},
+        "measurement_interval": {"$ref": "#/$defs/interval"},
+        "release_version": {"const": "v2026.08.2"},
+        "license": {"const": "CC BY 4.0"},
+        "doi": {"type": "string", "pattern": "^10\\.5281/zenodo\\.[1-9][0-9]*$"},
+        "repository": {"const": "https://github.com/peterhadorn/swiss-email-security-report"},
+        "methodology_signals": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 20}},
+        "caveat_signals": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 20}},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}
