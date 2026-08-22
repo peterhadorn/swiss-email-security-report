@@ -21,7 +21,8 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["dmarc_scanner", "release"]
+packages = ["dmarc_scanner", "release", "figures"]
 
 [tool.setuptools.package-data]
 release = ["config/*.json", "schema/*.json", "locales/*.json", "LICENSE-DATA.md", "FIGURE-CONTRACT.md"]
+figures = ["charts.json", "fonts/*.ttf", "fonts/*.txt"]

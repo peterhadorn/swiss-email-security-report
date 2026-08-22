@@ -649,13 +649,18 @@ def _svg_bytes(
         "source": source, "caption": caption,
     }
     values = {key: html.escape(value) for key, value in raw_values.items()}
+    import release.build_release as bundle
+
+    font_family = bundle.FIGURE_FONT_FAMILY
+    font_style = bundle._svg_font_face_declaration()
     max_characters = (width - 80) // 12
     caption_lines = textwrap.wrap(
         " ".join(caption.split()), width=max_characters,
         break_long_words=False, break_on_hyphens=False,
     )
     caption_nodes = "".join(
-        f'<text x="40" y="{140 + index * 24}" fill="#111111">'
+        f'<text x="40" y="{140 + index * 24}" fill="#111111" '
+        f'font-family="{font_family}">'
         f'{html.escape(line)}</text>'
         for index, line in enumerate(caption_lines)
     )
@@ -665,11 +670,12 @@ def _svg_bytes(
         'aria-labelledby="figure-title figure-description">'
         f'<title id="figure-title">{values["title"]}</title>'
         f'<desc id="figure-description">{values["description"]}</desc>'
+        f'<style type="text/css">{font_style}</style>'
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="#f8f7f3"/>'
-        f'<text x="40" y="80" fill="#111111">{values["title"]}</text>'
+        f'<text x="40" y="80" fill="#111111" font-family="{font_family}">{values["title"]}</text>'
         f'{caption_nodes}'
-        f'<text x="40" y="{height - 60}" fill="#111111">{values["source"]}</text>'
-        f'<text x="40" y="{height - 30}" fill="#111111">{values["doi"]}</text>'
+        f'<text x="40" y="{height - 60}" fill="#111111" font-family="{font_family}">{values["source"]}</text>'
+        f'<text x="40" y="{height - 30}" fill="#111111" font-family="{font_family}">{values["doi"]}</text>'
         '</svg>'
     ).encode()
 
@@ -929,8 +935,8 @@ def test_exact_30_figure_contract_is_pinned(release_module):
         "dmarc.no_supported_effective_policy",
     )
     assert release_module.FIGURE_SPECS["dns-transport-signals"]["metric_ids"] == (
-        "ds.record_present", "tlsa.record_present", "mta_sts.txt_present",
-        "tls_rpt.record_present", "caa.record_present",
+        "tlsa.record_present", "bimi.record_present", "mta_sts.txt_present",
+        "tls_rpt.record_present",
     )
     assert release_module.FIGURE_SPECS["social-report-card"]["dimensions"] == (1200, 630)
     assert all(
@@ -1583,7 +1589,11 @@ def test_svg_required_text_must_be_exact_and_locally_on_canvas(
     figure = staging / entry["path"]
     content = figure.read_text()
     caption_line = release_module._svg_caption_lines(entry["caption"], entry["width"])[0]
-    exact = f'<text x="40" y="140" fill="#111111">{html.escape(caption_line)}</text>'
+    exact = (
+        f'<text x="40" y="140" fill="#111111" '
+        f'font-family="{release_module.FIGURE_FONT_FAMILY}">'
+        f'{html.escape(caption_line)}</text>'
+    )
     if mutation == "transform":
         replacement = f'<g transform="translate(-5000 0)">{exact}</g>'
     elif mutation == "suffix":
@@ -1616,7 +1626,8 @@ def test_svg_required_text_must_be_exact_and_locally_on_canvas(
         )
     elif mutation == "duplicate-required":
         duplicate = (
-            f'<text x="40" y="110" fill="#111111">'
+            f'<text x="40" y="110" fill="#111111" '
+            f'font-family="{release_module.FIGURE_FONT_FAMILY}">'
             f'{html.escape(entry["doi"])}</text>'
         )
         background = (
@@ -1628,9 +1639,11 @@ def test_svg_required_text_must_be_exact_and_locally_on_canvas(
         words = " ".join(entry["caption"].split()).split()
         split_at = len(words) // 2
         duplicate = "".join((
-            f'<text x="40" y="400" fill="#111111">'
+            f'<text x="40" y="400" fill="#111111" '
+            f'font-family="{release_module.FIGURE_FONT_FAMILY}">'
             f'{html.escape(" ".join(words[:split_at]))}</text>',
-            f'<text x="40" y="424" fill="#111111">'
+            f'<text x="40" y="424" fill="#111111" '
+            f'font-family="{release_module.FIGURE_FONT_FAMILY}">'
             f'{html.escape(" ".join(words[split_at:]))}</text>',
         ))
         background = (
@@ -1670,6 +1683,39 @@ def test_svg_required_text_accepts_only_a_sane_font_size(release_module):
         source=item["source_label"], caption=item["caption"],
     ).replace(b'<text x="40" y="80"', b'<text font-size="10" x="40" y="80"')
     assert release_module._validate_svg(content, item) == (1600, 900)
+
+
+@pytest.mark.parametrize("mutation", [None, "extra-rule", "changed-font", "external-url"])
+def test_svg_embedded_font_declaration_is_exactly_pinned_and_inactive(
+    release_module, mutation,
+):
+    item = {
+        "width": 1600, "height": 900,
+        "title": "Reviewed title", "description": "Useful reviewed description",
+        "caption": "Reviewed aggregate caption with exact values and a limitation.",
+        "source_label": "Reviewed source label", "doi": "10.5281/zenodo.1234567",
+        "metric_ids": ["mx.present"],
+        "denominator_metric_ids": ["population.analyzable"],
+    }
+    content = _svg_bytes(
+        item["width"], item["height"], title=item["title"],
+        description=item["description"], doi=item["doi"],
+        source=item["source_label"], caption=item["caption"],
+    ).decode()
+    declaration = release_module._svg_font_face_declaration()
+    encoded = base64.b64encode(Path("figures/fonts/DMSans-Variable.ttf").read_bytes()).decode()
+    if mutation == "extra-rule":
+        declaration += "text{opacity:0}"
+    elif mutation == "changed-font":
+        declaration = declaration.replace(encoded[20], "A" if encoded[20] != "A" else "B", 1)
+    elif mutation == "external-url":
+        declaration = "@import url('https://private.example/font.css');" + declaration
+    content = content.replace(release_module._svg_font_face_declaration(), declaration, 1)
+    if mutation is None:
+        assert release_module._validate_svg(content.encode(), item) == (1600, 900)
+    else:
+        with pytest.raises(ValueError, match="font|style|inactive|allowlisted"):
+            release_module._validate_svg(content.encode(), item)
 
 
 def test_svg_realistic_long_caption_uses_exact_visible_multiline_layout(release_module):

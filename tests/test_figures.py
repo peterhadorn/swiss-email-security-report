@@ -1,134 +1,239 @@
-"""Regression tests for aggregate-only localized editorial figures."""
+"""Adversarial tests for the DOI-bound editorial figure renderer."""
+
+from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
-import shutil
-import xml.etree.ElementTree as ET
+import os
+from io import BytesIO
 from pathlib import Path
+import tomllib
+import xml.etree.ElementTree as ET
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageChops
 
-from figures.generate import HEIGHT, SOCIAL_HEIGHT, SOCIAL_WIDTH, WIDTH, generate
-
-
-FIXTURES = Path("tests/fixtures/figures")
+import figures.generate as renderer
 
 
-def _copy_bundle(tmp_path: Path) -> tuple[Path, Path]:
-    metrics, release = tmp_path / "metrics.json", tmp_path / "release.json"
-    shutil.copy(FIXTURES / "metrics.json", metrics)
-    shutil.copy(FIXTURES / "release.json", release)
-    return metrics, release
+DOI = "10.5281/zenodo.1234567"
 
 
-def _set_release_hash(metrics: Path, release: Path) -> None:
-    data = json.loads(release.read_text(encoding="utf-8"))
-    data["metrics_sha256"] = hashlib.sha256(metrics.read_bytes()).hexdigest()
-    data["metric_count"] = len(json.loads(metrics.read_text(encoding="utf-8"))["metrics"])
-    release.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+def _write_boolean_metric_with_reconciled_file_hashes(stage: Path) -> None:
+    """Reach Task 6 metric type validation rather than failing only on a hash."""
+    metrics_path = stage / "metrics.json"
+    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    metrics["metrics"][0]["numerator"] = True
+    metrics_path.write_text(json.dumps(metrics, sort_keys=True) + "\n", encoding="utf-8")
+    digest = hashlib.sha256(metrics_path.read_bytes()).hexdigest()
+    size = metrics_path.stat().st_size
+    release_path = stage / "release.json"
+    release = json.loads(release_path.read_text(encoding="utf-8"))
+    for entry in release["aggregate_files"]:
+        if entry["name"] == "metrics.json":
+            entry.update({"sha256": digest, "bytes": size})
+    release_path.write_text(json.dumps(release, sort_keys=True) + "\n", encoding="utf-8")
+    attestation_path = stage / "aggregate-attestation.json"
+    attestation = json.loads(attestation_path.read_text(encoding="utf-8"))
+    for entry in attestation["metric_files"]:
+        if entry["name"] == "metrics.json":
+            entry.update({"sha256": digest, "bytes": size})
+    attestation_path.write_text(json.dumps(attestation, sort_keys=True) + "\n", encoding="utf-8")
+    attestation_digest = hashlib.sha256(attestation_path.read_bytes()).hexdigest()
+    for entry in release["aggregate_files"]:
+        if entry["name"] == "aggregate-attestation.json":
+            entry.update({"sha256": attestation_digest, "bytes": attestation_path.stat().st_size})
+    release_path.write_text(json.dumps(release, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def test_generates_accessible_localized_svg_png_and_deterministic_manifest(tmp_path):
-    metrics, release = _copy_bundle(tmp_path)
-    output = tmp_path / "figures"
-    manifest = generate(metrics, release, output)
-
-    assert len(manifest["files"]) == 30
-    assert manifest["release_version"] == "v2026.08.2"
-    first_hashes = {entry["path"]: entry["sha256"] for entry in manifest["files"]}
-    assert generate(metrics, release, output)["files"] == manifest["files"]
-    assert {entry["path"]: entry["sha256"] for entry in manifest["files"]} == first_hashes
-
-    for locale in ("de", "fr", "it"):
-        svg = output / locale / "dmarc-policy-observations.svg"
-        root = ET.parse(svg).getroot()
-        assert root.attrib["role"] == "img"
-        assert root.find("{http://www.w3.org/2000/svg}title") is not None
-        assert root.find("{http://www.w3.org/2000/svg}desc") is not None
-        text = svg.read_text(encoding="utf-8")
-        assert "<text " in text and "p=reject" in text
-        assert "2026-08-21/2026-08-22" in text
-        assert "10." not in text  # fixture intentionally has no DOI/placeholder
-        with Image.open(output / locale / "dmarc-policy-observations.png") as image:
-            assert image.size == (WIDTH, HEIGHT)
-            assert image.mode == "RGB"
-        with Image.open(output / locale / "social-card.png") as image:
-            assert image.size == (SOCIAL_WIDTH, SOCIAL_HEIGHT)
-            assert image.mode == "RGB"
-    assert "40,00%" in (output / "de/dmarc-policy-observations.svg").read_text(encoding="utf-8")
-    assert "40,00\u202f%" in (output / "fr/dmarc-policy-observations.svg").read_text(encoding="utf-8")
-    assert "40,00%" in (output / "it/dmarc-policy-observations.svg").read_text(encoding="utf-8")
+def _bundle_tests_module():
+    spec = importlib.util.spec_from_file_location(
+        "figure_bundle_tests", Path("tests/test_release_bundle.py"),
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-@pytest.mark.parametrize("mutation, message", [
-    (lambda metrics, release: release.write_text(release.read_text().replace("v2026.08.2", "v2026.08.1")), "unsupported release version"),
-    (lambda metrics, release: release.write_text(release.read_text().replace("30dafd", "000000")), "metrics_sha256"),
-    (lambda metrics, release: release.write_text(release.read_text().replace('"metric_count": 40', '"metric_count": 39')), "metric_count"),
+@pytest.fixture
+def doi_staging(tmp_path, monkeypatch):
+    """Create a genuinely signed Task 6 DOI-bound synthetic release tree."""
+    bundle_tests = _bundle_tests_module()
+    bundle = bundle_tests.release_module.__wrapped__(monkeypatch)
+    stage, _database, _manifests = bundle_tests._stage(tmp_path, bundle)
+    bundle_tests._reserve_staging(stage, bundle, DOI)
+    return stage, bundle
+
+
+def _hashes(stage: Path) -> dict[str, str]:
+    return {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted((stage / "figures").glob("*.*"))
+    }
+
+
+def test_generates_exact_validated_30_file_matrix_with_real_doi_bound_stage(doi_staging):
+    stage, bundle = doi_staging
+    manifest = renderer.generate(stage)
+
+    assert renderer.FONT_PATH.is_file()
+    assert len(manifest["figures"]) == 30
+    bundle._validate_instance(bundle.FIGURES_SCHEMA_PATH, manifest, "figure manifest")
+    release = bundle._load_json(stage / "release.json", "release")
+    metrics = bundle._metric_objects(bundle._load_json(stage / "metrics.json", "metrics"))
+    bundle._validate_figures(stage, metrics, release, DOI)
+    assert {entry["path"] for entry in manifest["figures"]} == {
+        f"figures/{chart}.{locale}.{fmt}"
+        for chart in bundle.FIGURE_SPECS for locale in bundle.FIGURE_LOCALES
+        for fmt in ("svg", "png")
+    }
+    for entry in manifest["figures"]:
+        payload = stage / entry["path"]
+        assert entry["sha256"] == hashlib.sha256(payload.read_bytes()).hexdigest()
+        assert entry["bytes"] == payload.stat().st_size
+    for chart_id in bundle.FIGURE_SPECS:
+        for locale in bundle.FIGURE_LOCALES:
+            svg = (stage / f"figures/{chart_id}.{locale}.svg").read_bytes()
+            with Image.open(BytesIO(renderer._rasterize_svg(svg))) as expected, Image.open(
+                stage / f"figures/{chart_id}.{locale}.png",
+            ) as actual:
+                expected.load(); actual.load()
+                assert ImageChops.difference(expected.convert("RGBA"), actual.convert("RGBA")).getbbox() is None
+    for locale in bundle.FIGURE_LOCALES:
+        svg = (stage / f"figures/mail-authentication-overview.{locale}.svg").read_text(encoding="utf-8")
+        assert renderer.KICKERS["mail-authentication-overview"][locale] in svg
+        assert "AUTHENTICATION-ADOPTION" not in svg
+        assert "50,00 %" in svg  # all report locales use decimal commas
+        assert "(1/2)" in svg  # the exact numerator and denominator remain visible
+        with Image.open(stage / f"figures/social-report-card.{locale}.png") as image:
+            assert image.size == (1200, 630) and image.mode == "RGB"
+            assert image.info["doi"] == DOI
+            assert any(pixel != (248, 247, 243) for pixel in image.crop((0, 540, 800, 630)).get_flattened_data())
+
+
+def test_every_svg_embeds_and_uses_the_pinned_dm_sans_font(doi_staging):
+    stage, bundle = doi_staging
+    renderer.generate(stage)
+    assert hashlib.sha256(renderer.FONT_PATH.read_bytes()).hexdigest() == bundle.FIGURE_FONT_SHA256
+    for path in sorted((stage / "figures").glob("*.svg")):
+        root = ET.fromstring(path.read_bytes())
+        style = root.find("{http://www.w3.org/2000/svg}style")
+        assert style is not None
+        assert bundle._validate_embedded_svg_font(style) == renderer.FONT_PATH.read_bytes()
+        text_nodes = root.findall(".//{http://www.w3.org/2000/svg}text")
+        assert text_nodes
+        assert all(node.attrib.get("font-family") == bundle.FIGURE_FONT_FAMILY for node in text_nodes)
+
+
+def test_social_card_values_are_prominent_and_accent_avoids_copy(doi_staging):
+    stage, bundle = doi_staging
+    renderer.generate(stage)
+    namespace = {"svg": "http://www.w3.org/2000/svg"}
+    for locale in bundle.FIGURE_LOCALES:
+        root = ET.fromstring(
+            (stage / f"figures/social-report-card.{locale}.svg").read_bytes(),
+        )
+        texts = root.findall(".//svg:text", namespace)
+        prominent = [
+            node for node in texts
+            if "," in (node.text or "") and "%" in (node.text or "")
+            and float(node.attrib["font-size"]) >= 32
+        ]
+        assert len(prominent) == 4
+        assert any("1/2" in (node.text or "") for node in texts)
+        stripe = next(
+            node for node in root.findall(".//svg:rect", namespace)
+            if node.attrib.get("fill") == renderer.RED
+            and node.attrib.get("width") == "10"
+        )
+        stripe_top = int(stripe.attrib["y"])
+        stripe_bottom = stripe_top + int(stripe.attrib["height"])
+        protected = [
+            node for node in texts
+            if (node.text or "") in {
+                renderer.KICKERS["social-report-card"][locale], DOI,
+                bundle.FIGURE_SOURCE_LABELS[locale],
+            }
+        ]
+        assert len(protected) == 3
+        assert all(
+            not (stripe_top <= int(node.attrib["y"]) <= stripe_bottom)
+            for node in protected
+        )
+
+
+def test_generation_is_deterministic_for_two_authenticated_stages(tmp_path, monkeypatch):
+    first = _bundle_tests_module()
+    bundle = first.release_module.__wrapped__(monkeypatch)
+    stage_one, _, _ = first._stage(tmp_path / "one", bundle)
+    first._reserve_staging(stage_one, bundle, DOI)
+    renderer.generate(stage_one)
+    stage_two, _, _ = first._stage(tmp_path / "two", bundle)
+    first._reserve_staging(stage_two, bundle, DOI)
+    renderer.generate(stage_two)
+    assert _hashes(stage_one) == _hashes(stage_two)
+    with pytest.raises(FileExistsError, match="incomplete"):
+        renderer.generate(stage_one)
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda stage: (stage / "doi-reservation.json").write_text("{}\n", encoding="utf-8"),
+    lambda stage: (stage / "metrics.json").write_text('{"metrics": [], "metrics": []}\n', encoding="utf-8"),
+    _write_boolean_metric_with_reconciled_file_hashes,
 ])
-def test_rejects_stale_or_mismatched_release_metadata(tmp_path, mutation, message):
-    metrics, release = _copy_bundle(tmp_path)
-    mutation(metrics, release)
-    with pytest.raises(ValueError, match=message):
-        generate(metrics, release, tmp_path / "out")
+def test_refuses_tampered_unsigned_duplicate_or_boolean_public_inputs(doi_staging, mutation):
+    stage, _bundle = doi_staging
+    mutation(stage)
+    with pytest.raises(ValueError):
+        renderer.generate(stage)
+    assert not (stage / "figures").exists()
 
 
-def test_fails_closed_for_partition_and_private_input_and_preserves_existing_output(tmp_path):
-    metrics, release = _copy_bundle(tmp_path)
-    data = json.loads(metrics.read_text(encoding="utf-8"))
-    next(metric for metric in data["metrics"] if metric["metric_id"] == "dmarc.none")["numerator"] = 19
-    next(metric for metric in data["metrics"] if metric["metric_id"] == "dmarc.none")["percentage"] = "19"
-    metrics.write_text(json.dumps(data), encoding="utf-8")
-    _set_release_hash(metrics, release)
-    output = tmp_path / "out"
-    output.mkdir(); (output / "keep.txt").write_text("keep", encoding="utf-8")
-    with pytest.raises(ValueError, match="unmarked"):
-        generate(metrics, release, output)
-    assert (output / "keep.txt").read_text(encoding="utf-8") == "keep"
+def test_refuses_hardlinks_symlink_ancestors_and_parent_traversal(doi_staging, tmp_path):
+    stage, _bundle = doi_staging
+    os.link(stage / "metrics.json", stage / "metrics-copy.json")
+    with pytest.raises((ValueError, FileExistsError), match="hard-linked|incomplete"):
+        renderer.generate(stage)
+    (stage / "metrics-copy.json").unlink()
 
-    shutil.rmtree(output)
-    with pytest.raises(ValueError, match="partition"):
-        generate(metrics, release, output)
-
-    data["metrics"][0]["domain"] = "forbidden"
-    metrics.write_text(json.dumps(data), encoding="utf-8")
-    _set_release_hash(metrics, release)
-    with pytest.raises(ValueError, match="private field"):
-        generate(metrics, release, output)
+    link = tmp_path / "linked-root"
+    os.symlink(stage.parent, link)
+    with pytest.raises(ValueError, match="symlink"):
+        renderer.generate(link / stage.name)
+    with pytest.raises(ValueError, match="parent traversal"):
+        renderer.generate(stage.parent / "fictional" / ".." / stage.name)
 
 
-def test_accepts_validated_doi_but_rejects_placeholder(tmp_path):
-    metrics, release = _copy_bundle(tmp_path)
-    data = json.loads(release.read_text(encoding="utf-8"))
-    data["doi"] = "10.5281/zenodo.1234567"
-    release.write_text(json.dumps(data), encoding="utf-8")
-    generate(metrics, release, tmp_path / "with-doi")
-    assert "DOI: 10.5281/zenodo.1234567" in (tmp_path / "with-doi/de/dmarc-policy-observations.svg").read_text(encoding="utf-8")
-    data["doi"] = "pending DOI"
-    release.write_text(json.dumps(data), encoding="utf-8")
-    with pytest.raises(ValueError, match="DOI"):
-        generate(metrics, release, tmp_path / "bad-doi")
+def test_keyboard_interrupt_leaves_no_partial_figure_tree(doi_staging, monkeypatch):
+    stage, _bundle = doi_staging
+
+    def interrupt(*_args, **_kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(renderer, "_entry", interrupt)
+    with pytest.raises(KeyboardInterrupt):
+        renderer.generate(stage)
+    assert not (stage / "figures").exists()
+    assert not list(stage.glob(".figures-*"))
 
 
-def test_zero_denominator_and_zero_values_are_rendered_without_invalid_images(tmp_path):
-    metrics, release = _copy_bundle(tmp_path)
-    data = json.loads(metrics.read_text(encoding="utf-8"))
-    for metric in data["metrics"]:
-        metric["numerator"] = 0
-        metric["denominator"] = 0
-        metric["percentage"] = "0"
-    metrics.write_text(json.dumps(data), encoding="utf-8")
-    _set_release_hash(metrics, release)
-    manifest = generate(metrics, release, tmp_path / "zero")
-    assert len(manifest["files"]) == 30
-    assert "0,00%" in (tmp_path / "zero/it/dmarc-policy-observations.svg").read_text(encoding="utf-8")
+def test_catalogue_is_exact_and_excludes_ds_caa_and_obsolete_provider_groups():
+    catalogue = json.loads((renderer.HERE / "charts.json").read_text(encoding="utf-8"))
+    assert [chart["id"] for chart in catalogue["charts"]] == [
+        "mail-authentication-overview", "dmarc-policy-observations",
+        "dns-transport-signals", "mx-provider-fingerprints",
+    ]
+    transport = catalogue["charts"][2]["metric_ids"]
+    assert transport == ["tlsa.record_present", "bimi.record_present", "mta_sts.txt_present", "tls_rpt.record_present"]
+    assert "ds.record_present" not in transport and "caa.record_present" not in transport
+    assert not (renderer.HERE / "style.json").exists()
 
 
-def test_rejects_metric_with_matching_count_but_wrong_denominator_identity(tmp_path):
-    metrics, release = _copy_bundle(tmp_path)
-    data = json.loads(metrics.read_text(encoding="utf-8"))
-    next(metric for metric in data["metrics"] if metric["metric_id"] == "spf.present")["denominator_metric_id"] = "population.analyzable"
-    metrics.write_text(json.dumps(data), encoding="utf-8")
-    _set_release_hash(metrics, release)
-    with pytest.raises(ValueError, match="metric denominator identity"):
-        generate(metrics, release, tmp_path / "wrong-denominator")
+def test_runtime_catalogue_and_font_are_declared_as_wheel_package_data():
+    configuration = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    packaged = configuration["tool"]["setuptools"]["package-data"]["figures"]
+    assert "charts.json" in packaged
+    assert "fonts/*.ttf" in packaged
+    assert "fonts/*.txt" in packaged

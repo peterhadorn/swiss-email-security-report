@@ -29,3 +29,10 @@ All notable changes to this project are documented in this file.
   package includes the DE/FR/IT metric catalogues, and the finalizer enforces an
   exact accessible SVG layer template plus normalized path, identifier, DNS,
   address, and hash privacy boundaries.
+- The exact 30-file DE/FR/IT editorial figure matrix now ships its reviewed
+  chart catalogue and OFL-licensed DM Sans asset as package data. Every SVG
+  embeds and explicitly uses the hash-pinned font through one strictly
+  validated inactive declaration; PNG partners are rasterized from those SVG
+  elements with pinned Pillow only. Prominent percentages use locale decimal
+  commas, expose exact numerators and denominators, and the redesigned social
+  layout keeps its accent clear of the kicker, source, and DOI.

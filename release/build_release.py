@@ -14,6 +14,7 @@ import base64
 import csv
 from dataclasses import dataclass
 from decimal import Decimal
+from functools import cache
 import hashlib
 import html
 import ipaddress
@@ -66,6 +67,9 @@ RESULTS_TABLE = "dmarc_scan_results"
 HERE = Path(__file__).resolve().parent
 CONFIG_PATH = HERE / "config" / f"{RELEASE_VERSION}.json"
 SCHEMA_DIRECTORY = HERE / "schema"
+FIGURE_FONT_PATH = HERE.parent / "figures" / "fonts" / "DMSans-Variable.ttf"
+FIGURE_FONT_SHA256 = "8cd08d97e89c24d0aa92edd2f0f4c8ee6195eee9b7c9f154865a58b02f0c1c0d"
+FIGURE_FONT_FAMILY = "DMSansEmbedded"
 CONFIG_SCHEMA_PATH = SCHEMA_DIRECTORY / "release-config.schema.json"
 METRICS_SCHEMA_PATH = SCHEMA_DIRECTORY / "metrics.schema.json"
 ATTESTATION_SCHEMA_PATH = SCHEMA_DIRECTORY / "aggregate-attestation.schema.json"
@@ -122,9 +126,9 @@ FIGURE_SPECS: dict[str, dict[str, Any]] = {
     },
     "dns-transport-signals": {
         "family": "dns-and-transport", "kind": "chart", "dimensions": (1600, 900),
-        "metric_ids": ("ds.record_present", "tlsa.record_present", "mta_sts.txt_present", "tls_rpt.record_present", "caa.record_present"),
-        "denominator_metric_ids": ("population.analyzable", "mx.present", "mx.present", "mx.present", "mx.present"),
-        "caption_signal": "Record presence is not DNSSEC, DANE, or HTTPS-policy validation.",
+        "metric_ids": ("tlsa.record_present", "bimi.record_present", "mta_sts.txt_present", "tls_rpt.record_present"),
+        "denominator_metric_ids": ("mx.present", "mx.present", "mx.present", "mx.present"),
+        "caption_signal": "Record presence is not DANE, BIMI, MTA-STS, or TLS-RPT validation.",
     },
     "mx-provider-fingerprints": {
         "family": "mx-provider-fingerprint", "kind": "chart", "dimensions": (1600, 900),
@@ -167,9 +171,9 @@ APPROVED_FIGURE_DESCRIPTIONS = {
         "it": "Politiche DMARC osservate tra i domini analizzabili con un record MX non nullo.",
     },
     "dns-transport-signals": {
-        "de": "Beobachtung ausgewählter DNS- und Transport-Einträge ohne kryptografische oder Ende-zu-Ende-Validierung.",
-        "fr": "Observation d’enregistrements DNS et de transport sélectionnés, sans validation cryptographique ni de bout en bout.",
-        "it": "Osservazione di record DNS e di trasporto selezionati, senza validazione crittografica o end-to-end.",
+        "de": "Beobachtung ausgewählter TLSA-, BIMI-, MTA-STS- und TLS-RPT-Einträge ohne Ende-zu-Ende-Validierung.",
+        "fr": "Observation d’enregistrements TLSA, BIMI, MTA-STS et TLS-RPT sélectionnés, sans validation de bout en bout.",
+        "it": "Osservazione di record TLSA, BIMI, MTA-STS e TLS-RPT selezionati, senza validazione end-to-end.",
     },
     "mx-provider-fingerprints": {
         "de": "Beobachtete MX-Hostname-Fingerprints; keine Messung von Marktanteilen oder Kundenbeziehungen.",
@@ -194,9 +198,9 @@ APPROVED_FIGURE_CAVEATS = {
         "it": "I tag DMARC pubblicati non dimostrano un’applicazione operativa effettiva.",
     },
     "dns-transport-signals": {
-        "de": "Die Präsenz eines Eintrags ist kein Nachweis für DNSSEC-, DANE- oder HTTPS-Policy-Funktionalität.",
-        "fr": "La présence d’un enregistrement ne valide ni DNSSEC, ni DANE, ni le fonctionnement d’une politique HTTPS.",
-        "it": "La presenza di un record non convalida DNSSEC, DANE o il funzionamento di una policy HTTPS.",
+        "de": "Die Präsenz eines Eintrags ist kein Nachweis für DANE-, BIMI-, MTA-STS- oder TLS-RPT-Funktionalität.",
+        "fr": "La présence d’un enregistrement ne valide ni DANE, ni BIMI, ni le fonctionnement de MTA-STS ou TLS-RPT.",
+        "it": "La presenza di un record non convalida DANE, BIMI o il funzionamento di MTA-STS o TLS-RPT.",
     },
     "mx-provider-fingerprints": {
         "de": "Hostname-Fingerprints sind keine Marktanteils- oder Vertragsmessung.",
@@ -1319,7 +1323,16 @@ def _assert_public_content_safe(files: Mapping[str, Path]) -> None:
                     allowed_domain_like=known_domain_like,
                 )
             else:
-                decoded = " ".join(svg_root.itertext())
+                style_nodes = [
+                    element for element in svg_root.iter()
+                    if str(element.tag).rsplit("}", 1)[-1] == "style"
+                ]
+                for style in style_nodes:
+                    _validate_embedded_svg_font(style)
+                decoded = " ".join(
+                    "".join(element.itertext()) for element in svg_root.iter()
+                    if str(element.tag).rsplit("}", 1)[-1] in {"title", "desc", "text"}
+                )
                 attribute_values = " ".join(
                     value for element in svg_root.iter() for value in element.attrib.values()
                 )
@@ -1861,10 +1874,42 @@ def _validate_png(content: bytes, item: Mapping[str, Any]) -> tuple[int, int]:
     return dimensions
 
 
+@cache
+def _figure_font_bytes() -> bytes:
+    """Load the one licensed font accepted by the release boundary."""
+    _require_plain_file(FIGURE_FONT_PATH, "bundled DM Sans figure font")
+    payload = FIGURE_FONT_PATH.read_bytes()
+    if hashlib.sha256(payload).hexdigest() != FIGURE_FONT_SHA256:
+        raise ValueError("bundled DM Sans figure font differs from the pinned licensed asset")
+    return payload
+
+
+@cache
+def _svg_font_face_declaration() -> str:
+    encoded = base64.b64encode(_figure_font_bytes()).decode("ascii")
+    return (
+        f"@font-face{{font-family:'{FIGURE_FONT_FAMILY}';"
+        f"src:url('data:font/ttf;base64,{encoded}') format('truetype');"
+        "font-style:normal;font-weight:100 1000;font-display:block;}"
+    )
+
+
+def _validate_embedded_svg_font(style: ET.Element) -> bytes:
+    """Accept only the exact inert data-URI declaration for pinned DM Sans."""
+    if style.attrib != {"type": "text/css"} or len(style) or style.tail and style.tail.strip():
+        raise ValueError("figure SVG embedded font style structure differs from the contract")
+    declaration = style.text or ""
+    if declaration != _svg_font_face_declaration():
+        raise ValueError("figure SVG embedded font declaration is not the exact allowlisted style")
+    expected = _figure_font_bytes()
+    return expected
+
+
 SVG_ALLOWED_ATTRIBUTES = {
     "svg": {"width", "height", "viewBox", "role", "aria-labelledby"},
     "g": {"transform", "fill", "stroke", "stroke-width", "opacity", "font-family", "font-size", "font-weight", "text-anchor"},
     "title": {"id"}, "desc": {"id"},
+    "style": {"type"},
     "rect": {"x", "y", "width", "height", "rx", "ry", "fill", "stroke", "stroke-width", "opacity"},
     "line": {"x1", "y1", "x2", "y2", "stroke", "stroke-width", "opacity"},
     "path": {"d", "fill", "stroke", "stroke-width", "opacity"},
@@ -1949,7 +1994,7 @@ def _validate_svg(content: bytes, item: Mapping[str, Any]) -> tuple[int, int]:
         raise ValueError("figure SVG exceeds the reviewed size limit")
     lowered = content.lower()
     if any(token in lowered for token in (
-        b"<!doctype", b"<!entity", b"<?", b"xmlns:", b"javascript:", b"data:", b"url(",
+        b"<!doctype", b"<!entity", b"<?", b"xmlns:", b"javascript:",
     )):
         raise ValueError("figure SVG must be an inactive standalone document")
     try:
@@ -1963,6 +2008,10 @@ def _validate_svg(content: bytes, item: Mapping[str, Any]) -> tuple[int, int]:
         name, _namespace = _svg_local_name(element.tag)
         if name not in SVG_ALLOWED_ATTRIBUTES:
             raise ValueError(f"figure SVG element is not allowlisted: {name}")
+        if element.tail and element.tail.strip():
+            raise ValueError("figure SVG contains unreviewed mixed-content text")
+        if name not in {"title", "desc", "style", "text"} and element.text and element.text.strip():
+            raise ValueError("figure SVG contains unreviewed mixed-content text")
         for attribute, value in element.attrib.items():
             if (
                 attribute.startswith("{") or ":" in attribute
@@ -1971,6 +2020,8 @@ def _validate_svg(content: bytes, item: Mapping[str, Any]) -> tuple[int, int]:
                 or re.search(r"(?:url\s*\(|javascript:|data:|https?:|file:|//)", value, re.I)
             ):
                 raise ValueError(f"figure SVG attribute is not allowlisted: {attribute}")
+        if name == "text" and element.attrib.get("font-family") != FIGURE_FONT_FAMILY:
+            raise ValueError("figure SVG text must explicitly use the embedded DM Sans font")
     dimensions = []
     for name in ("width", "height"):
         raw = root.attrib.get(name, "")
@@ -1988,14 +2039,16 @@ def _validate_svg(content: bytes, item: Mapping[str, Any]) -> tuple[int, int]:
     required_layout = _svg_required_text_layout(item)
     required_count = len(required_layout)
     if (
-        len(children) < 3 + required_count
-        or child_names[:3] != ["title", "desc", "rect"]
+        len(children) < 4 + required_count
+        or child_names[:4] != ["title", "desc", "style", "rect"]
         or child_names[-required_count:] != ["text"] * required_count
         or sum(_svg_local_name(element.tag)[0] == "title" for element in all_elements) != 1
         or sum(_svg_local_name(element.tag)[0] == "desc" for element in all_elements) != 1
+        or sum(_svg_local_name(element.tag)[0] == "style" for element in all_elements) != 1
     ):
         raise ValueError("figure SVG requires the exact direct accessibility and text layer order")
-    title, description, background = children[:3]
+    title, description, style, background = children[:4]
+    _validate_embedded_svg_font(style)
     identifiers = [element.attrib["id"] for element in all_elements if "id" in element.attrib]
     if (
         title.attrib != {"id": "figure-title"}
@@ -2031,6 +2084,7 @@ def _validate_svg(content: bytes, item: Mapping[str, Any]) -> tuple[int, int]:
             len(element) or actual_text != expected_text
             or attributes != {
                 "x": str(expected_x), "y": str(expected_y), "fill": SVG_REQUIRED_TEXT_FILL,
+                "font-family": FIGURE_FONT_FAMILY,
             }
             or not SVG_MIN_REQUIRED_FONT_SIZE_PX <= font_size <= SVG_MAX_REQUIRED_FONT_SIZE_PX
             or len(actual_text) * font_size > available_width
@@ -2058,7 +2112,12 @@ def _validate_svg(content: bytes, item: Mapping[str, Any]) -> tuple[int, int]:
         or normalized_visible_text.count(full_caption) != 1
     ):
         raise ValueError("figure SVG required visible caption must occur exactly once")
-    all_text = " ".join(" ".join(text.split()) for text in root.itertext() if text.strip())
+    all_text = " ".join(
+        " ".join("".join(element.itertext()).split())
+        for element in all_elements
+        if _svg_local_name(element.tag)[0] in {"title", "desc", "text"}
+        and "".join(element.itertext()).strip()
+    )
     _assert_safe_public_text(
         all_text, "figure SVG decoded text",
         allowed_domain_like=[*item["metric_ids"], *item["denominator_metric_ids"]],

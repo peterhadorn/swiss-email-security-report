@@ -31,7 +31,7 @@ PNG. Filenames are exactly `figures/{chart_id}.{locale}.{format}`.
 | --- | --- | --- | --- | --- | --- |
 | `mail-authentication-overview` | `authentication-adoption` | `chart` | 1600×900 | `mx.present`, `spf.present`, `dkim.selector_observed`, `dmarc.detected` | `population.analyzable`, `mx.present`, `mx.present`, `mx.present` |
 | `dmarc-policy-observations` | `dmarc-policy` | `chart` | 1600×900 | `dmarc.reject`, `dmarc.quarantine`, `dmarc.none`, `dmarc.no_supported_effective_policy` | four times `mx.present` |
-| `dns-transport-signals` | `dns-and-transport` | `chart` | 1600×900 | `ds.record_present`, `tlsa.record_present`, `mta_sts.txt_present`, `tls_rpt.record_present`, `caa.record_present` | `population.analyzable`, then four times `mx.present` |
+| `dns-transport-signals` | `dns-and-transport` | `chart` | 1600×900 | `tlsa.record_present`, `bimi.record_present`, `mta_sts.txt_present`, `tls_rpt.record_present` | four times `mx.present` |
 | `mx-provider-fingerprints` | `mx-provider-fingerprint` | `chart` | 1600×900 | `mx.provider.hostpoint`, `mx.provider.infomaniak`, `mx.provider.microsoft365`, `mx.provider.google_workspace`, `mx.provider.self_hosted`, `mx.provider.other`, `mx.provider.unknown` | seven times `mx.present` |
 | `social-report-card` | `report-card` | `social` | 1200×630 | `mx.present`, `spf.present`, `dkim.selector_observed`, `dmarc.detected` | `population.analyzable`, `mx.present`, `mx.present`, `mx.present` |
 
@@ -62,9 +62,14 @@ additionally contains
 ## Safe assets
 
 SVG uses only the inactive element and attribute allowlist implemented by the
-finalizer. It has no scripts, event handlers, `foreignObject`, style or URL
-loads, links, images, animation, processing instructions, entities, or external
-namespaces. Every SVG uses `role="img"`,
+finalizer. It has no scripts, event handlers, `foreignObject`, external style or
+URL loads, links, images, animation, processing instructions, entities, or
+external namespaces. The only accepted style node is one exact, direct-root
+`@font-face` declaration containing the pinned licensed DM Sans variable TTF as
+a local base64 data URI. Its decoded bytes must match SHA-256
+`8cd08d97e89c24d0aa92edd2f0f4c8ee6195eee9b7c9f154865a58b02f0c1c0d`;
+extra CSS, another font, and every external URL fail closed. Every visible text
+node explicitly references `DMSansEmbedded`. Every SVG uses `role="img"`,
 `aria-labelledby="figure-title figure-description"`, localized `<title>` and
 `<desc>` nodes with those IDs, and visibly renders the title, caption, source,
 and DOI exactly once as local on-canvas text. Required-text ancestry may not
@@ -84,8 +89,16 @@ title, caption, source, or DOI content. This exact structure and layer order
 prevents inherited near-zero opacity, background-colour text, right-edge
 placement, duplicate ARIA nodes, and later opaque occlusion.
 
-PNG files are RGB or RGBA, exact-size renders of their SVG partner. They must
-load successfully under pinned Pillow after both `verify()` and `load()`. PNG
+Displayed percentages use the locale decimal comma in DE, FR, and IT, and each
+prominent value visibly includes its exact numerator and denominator. The
+social accent stripe occupies only the metric area and cannot intersect the
+kicker, source, or DOI baselines.
+
+PNG files are RGB or RGBA, exact-size renders of their SVG partner. The renderer
+parses the already validated SVG and rasterizes its rectangles and text with
+pinned Pillow and the embedded DM Sans bytes; it does not call host image
+binaries or fontconfig. They must load successfully under pinned Pillow after
+both `verify()` and `load()`. PNG
 text metadata keys `doi`, `source`, and `caption` exactly match the figure
 manifest. Task 7 renderer tests must additionally prove those strings are
 drawn in the visible image; the finalizer cannot infer semantic pixel content.
