@@ -132,13 +132,9 @@ def _assert_closed_categories(conn: sqlite3.Connection, schema: dict[str, str]) 
     if _count_all(conn, binary_predicate, binary_parameters):
         raise RuntimeError("non-binary scanner flag; refusing aggregate export")
 
-    integer_columns = ("spf_lookup_count", "dmarc_pct")
-    integer_predicate = " OR ".join(
-        f"typeof({column}) <> ? OR {column} < ?" for column in integer_columns
-    )
-    if _count_all(conn, integer_predicate, ("integer", 0, "integer", 0)):
+    if _count_all(conn, "typeof(spf_lookup_count) <> ? OR spf_lookup_count < ?", ("integer", 0)):
         raise RuntimeError("invalid integer scanner value; refusing aggregate export")
-    if _count_all(conn, "dmarc_pct > ?", (100,)):
+    if _count_all(conn, "typeof(dmarc_pct) <> ?", ("integer",)):
         raise RuntimeError("invalid DMARC pct value; refusing aggregate export")
 
     json_fields = tuple(field for field in JSON_FIELDS if not (schema and field == "query_statuses"))
@@ -295,7 +291,9 @@ def _specifications(schema: dict[str, str]) -> list[_MetricSpec]:
         _MetricSpec("dmarc.detected_all", "dmarc", "has_dmarc = ?", (1,), "population.analyzable", detected_dmarc,
                     passive, "This includes records on rows with and without MX."),
         _MetricSpec("dmarc.partial_pct", "dmarc", "has_dmarc = ? AND dmarc_pct >= ? AND dmarc_pct < ?", (1, 0, 100), "dmarc.detected_all", detected_dmarc,
-                    "Parsed DMARC pct= tag across all detected DMARC records.", "The p= tag's pct setting is a published value; it does not demonstrate message-level enforcement."),
+                    "Parsed valid DMARC pct= tag (0–99) across all detected DMARC records.", "The p= tag's pct setting is a published value; it does not demonstrate message-level enforcement. Out-of-range pct values are reported separately."),
+        _MetricSpec("dmarc.invalid_pct", "dmarc", "has_dmarc = ? AND (dmarc_pct < ? OR dmarc_pct > ?)", (1, 0, 100), "dmarc.detected_all", detected_dmarc,
+                    "Detected DMARC record with a numeric pct= value outside the RFC range 0–100.", "This reports malformed published record content; it is not treated as a partial or effective enforcement setting."),
         _MetricSpec("dmarc.strict_alignment", "dmarc", "has_dmarc = ? AND (dmarc_adkim = ? OR dmarc_aspf = ?)", (1, "s", "s"), "dmarc.detected_all", detected_dmarc,
                     "Parsed DMARC adkim= and aspf= tags across all detected DMARC records.", "Strict alignment tags do not demonstrate that mail flows or aligned identifiers were validated."),
         _MetricSpec("dmarc.no_mx_detected", "dmarc", "has_mx = ? AND has_dmarc = ?", (0, 1), "mx.absent", no_mx_rows,

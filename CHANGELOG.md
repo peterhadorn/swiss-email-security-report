@@ -36,3 +36,6 @@ All notable changes to this project are documented in this file.
   elements with pinned Pillow only. Prominent percentages use locale decimal
   commas, expose exact numerators and denominators, and the redesigned social
   layout keeps its accent clear of the kicker, source, and DOI.
+- Aggregate output now reports malformed numeric DMARC `pct=` values separately
+  from valid partial-policy observations, rather than misclassifying or hiding
+  those published record values.

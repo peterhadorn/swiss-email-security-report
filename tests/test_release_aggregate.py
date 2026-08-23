@@ -241,7 +241,7 @@ def test_metric_schema_and_native_locale_catalogues_cover_every_metric():
         ("query_statuses", '{"MX case-01": "error"}', "inconsistent query status"),
         ("has_mx", 2, "binary"),
         ("dmarc_pct", None, "DMARC pct"),
-        ("dmarc_pct", 101, "DMARC pct"),
+        ("dmarc_pct", "not-a-number", "DMARC pct"),
         ("dmarc_adkim", None, "DMARC alignment"),
         ("mx_provider", None, "MX provider"),
         ("query_statuses", "not-json", "invalid query status"),
