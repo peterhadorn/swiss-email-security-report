@@ -1008,7 +1008,10 @@ def validate_manifest_chain(
 
 
 def _read_only_connection(database: Path) -> sqlite3.Connection:
-    return sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)
+    # The scanner has already closed and checkpointed the private database.
+    # ``immutable=1`` prevents aggregate verification itself from creating
+    # -wal/-shm companions after the preflight has proved the output clean.
+    return sqlite3.connect(database.resolve().as_uri() + "?mode=ro&immutable=1", uri=True)
 
 
 def _independent_schema(conn: sqlite3.Connection) -> dict[str, str]:

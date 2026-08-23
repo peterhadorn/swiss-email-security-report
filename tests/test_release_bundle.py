@@ -349,6 +349,8 @@ def test_manifest_directory_input_and_question_hash_filenames(tmp_path, release_
             conn.execute("DELETE FROM dmarc_scan_results")
     finally:
         conn.close()
+    assert not Path(f"{database}-wal").exists()
+    assert not Path(f"{database}-shm").exists()
     assert not (tmp_path / "synthetic").exists()
 
 
