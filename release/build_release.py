@@ -805,7 +805,7 @@ def _load_official_config() -> dict[str, Any]:
             "cache_policy": "disabled",
             "dnspython_version": "2.8.0",
         },
-        "root_run": {"mode": FRESH_MODE, "input_order": "seeded_shuffle_then_limit"},
+        "root_run": {"mode": RESUME_MODE, "input_order": "seeded_shuffle_then_limit"},
         "retry_run": {"mode": RESUME_MODE},
         "execution": {
             "limit": None, "shuffle": True, "shuffle_seed": 42,
@@ -889,7 +889,7 @@ def validate_manifest_chain(
     )
     _validate_execution_pin(root_manifest, config)
     if root_manifest["retry_resume_mode"] != config["root_run"]["mode"]:
-        raise ValueError("official root must be a fresh run")
+        raise ValueError("official root provenance mode does not match the release configuration")
     if root_manifest["effective_input_order"] != config["root_run"]["input_order"]:
         raise ValueError("official root input order is not pinned")
     if (
@@ -968,7 +968,7 @@ def validate_manifest_chain(
     first_retry_pre = retry_entries[0][2]["pre_database"]
     root_run = ManifestRun(
         manifest_sha256=loaded[0][2], manifest_schema_version=1,
-        run_identifier=loaded[0][2], mode=FRESH_MODE,
+        run_identifier=loaded[0][2], mode=root_info["mode"],
         scanner_git_revision=root_manifest["scanner_git_revision"],
         measurement_core_sha256=root_info["measurement_core_sha256"],
         started_at_utc=root_info["started_at"], finished_at_utc=root_info["finished_at"],

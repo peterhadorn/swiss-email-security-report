@@ -46,7 +46,7 @@
   },
   "root_run": {
     "input_order": "seeded_shuffle_then_limit",
-    "mode": "fresh"
+    "mode": "resume_retry_partial_errors"
   },
   "root_scanner_git_revision": "48eba50b7b2e50d9c16abf4a7807a3ff4d693611",
   "root_measurement_core_sha256": "c464dbd2e1698685d95b8b45390b8e863abf0e1dc8bb3e86de56411d17fa0486",

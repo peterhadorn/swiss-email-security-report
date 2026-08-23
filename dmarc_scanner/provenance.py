@@ -1008,8 +1008,14 @@ def _validate_v1_root(
     _validate_common_parameters(item, order_key="effective_input_order")
     if not item["shuffle"] and effective_sha != source_sha:
         raise ValueError("unshuffled v1 effective input differs from its source")
-    if item["retry_resume_mode"] != FRESH_MODE or item["limit"] is not None:
-        raise ValueError("v1 root must be a no-limit fresh run")
+    # The original v1 scanner wrote one final sidecar even when a stopped
+    # full-universe run was resumed.  That is a provenance limitation, not a
+    # measurement failure: the manifest still pins the complete source, exact
+    # shuffled input, output identity and resolver/runtime settings.  Accept
+    # that *documented* legacy resume here, while continuing to reject every
+    # partial/limited or unknown mode.
+    if item["retry_resume_mode"] not in (FRESH_MODE, RESUME_MODE) or item["limit"] is not None:
+        raise ValueError("v1 root must be a no-limit full-universe run")
     if item["scanner_git_dirty"]:
         raise ValueError("v1 release root must be from a clean checkout")
     if actual_output_identity is not None and actual_output_identity != (
@@ -1039,6 +1045,7 @@ def _validate_v1_root(
         "shuffle": item["shuffle"],
         "shuffle_seed": item["shuffle_seed"],
         "planned_input_order": item["effective_input_order"],
+        "mode": item["retry_resume_mode"],
     }
 
 

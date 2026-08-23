@@ -18,7 +18,7 @@
     "final_measurement_core_sha256": {"const": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18"},
     "measurement_core_transition": {"const": {"attestation_id": "5ff4b49ac61ed6b1e3c5246748a8657681359ce7c457530d751b4e295031171f", "from_measurement_core_sha256": "c464dbd2e1698685d95b8b45390b8e863abf0e1dc8bb3e86de56411d17fa0486", "to_measurement_core_sha256": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18", "changed_file": "dmarc_scanner/db.py", "old_file_sha256": "8e93ca54f9460ed29d05d6387f3c6b1a1fe57eb57cd660642f46de1d9f934cec", "new_file_sha256": "2a40ee7fb6ffc7ef313364fce1bba4f4f156165e51353931c51499be9634e031", "reason": "read-only SQLite URI safety fix in validate_output_path only"}},
     "resolver_configuration": {"$ref": "#/$defs/resolver"},
-    "root_run": {"type": "object", "additionalProperties": false, "required": ["mode", "input_order"], "properties": {"mode": {"const": "fresh"}, "input_order": {"const": "seeded_shuffle_then_limit"}}},
+    "root_run": {"type": "object", "additionalProperties": false, "required": ["mode", "input_order"], "properties": {"mode": {"const": "resume_retry_partial_errors"}, "input_order": {"const": "seeded_shuffle_then_limit"}}},
     "retry_run": {"type": "object", "additionalProperties": false, "required": ["mode"], "properties": {"mode": {"const": "resume_retry_partial_errors"}}},
     "execution": {
       "type": "object", "additionalProperties": false,
