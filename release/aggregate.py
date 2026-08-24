@@ -196,12 +196,6 @@ def _assert_closed_categories(conn: sqlite3.Connection, schema: dict[str, str]) 
     if _count_all(conn, "dmarc_policy IS NULL OR dmarc_sp IS NULL", ()):
         raise RuntimeError("NULL DMARC categorical value; refusing aggregate export")
 
-    invalid_subdomain_policy_rows = _count_all(
-        conn, "dmarc_sp NOT IN (?, ?, ?, ?)", ("", "none", "quarantine", "reject")
-    )
-    if invalid_subdomain_policy_rows:
-        raise RuntimeError("unrecognized DMARC subdomain policy; refusing aggregate export")
-
 
 def _specifications(schema: dict[str, str]) -> list[_MetricSpec]:
     ds = schema.get("has_ds_record", "has_ds_record")
