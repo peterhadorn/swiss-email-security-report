@@ -193,14 +193,6 @@ def _assert_closed_categories(conn: sqlite3.Connection, schema: dict[str, str]) 
     if unknown_spf_rows:
         raise RuntimeError("unrecognized SPF terminal mechanism; refusing aggregate export")
 
-    invalid_alignment_rows = _count_all(
-        conn,
-        "dmarc_adkim IS NULL OR dmarc_aspf IS NULL OR dmarc_adkim NOT IN (?, ?) OR dmarc_aspf NOT IN (?, ?)",
-        ("r", "s", "r", "s"),
-    )
-    if invalid_alignment_rows:
-        raise RuntimeError("invalid DMARC alignment value; refusing aggregate export")
-
     if _count_all(conn, "dmarc_policy IS NULL OR dmarc_sp IS NULL", ()):
         raise RuntimeError("NULL DMARC categorical value; refusing aggregate export")
 
@@ -296,6 +288,8 @@ def _specifications(schema: dict[str, str]) -> list[_MetricSpec]:
                     "Detected DMARC record with a numeric pct= value outside the RFC range 0–100.", "This reports malformed published record content; it is not treated as a partial or effective enforcement setting."),
         _MetricSpec("dmarc.strict_alignment", "dmarc", "has_dmarc = ? AND (dmarc_adkim = ? OR dmarc_aspf = ?)", (1, "s", "s"), "dmarc.detected_all", detected_dmarc,
                     "Parsed DMARC adkim= and aspf= tags across all detected DMARC records.", "Strict alignment tags do not demonstrate that mail flows or aligned identifiers were validated."),
+        _MetricSpec("dmarc.invalid_alignment", "dmarc", "has_dmarc = ? AND (dmarc_adkim NOT IN (?, ?) OR dmarc_aspf NOT IN (?, ?))", (1, "r", "s", "r", "s"), "dmarc.detected_all", detected_dmarc,
+                    "Detected DMARC record with an adkim= or aspf= value outside the supported r/s values.", "This reports malformed published record content; it is not classified as relaxed or strict alignment."),
         _MetricSpec("dmarc.no_mx_detected", "dmarc", "has_mx = ? AND has_dmarc = ?", (0, 1), "mx.absent", no_mx_rows,
                     passive, "This is deliberately reported independently of MX routing."),
         _MetricSpec("ds.record_present", "dns", f"{ds} = ?", (1,), "population.analyzable", all_rows,

@@ -39,3 +39,5 @@ All notable changes to this project are documented in this file.
 - Aggregate output now reports malformed numeric DMARC `pct=` values separately
   from valid partial-policy observations, rather than misclassifying or hiding
   those published record values.
+- Aggregate output likewise reports unsupported DMARC alignment-tag values
+  separately from valid relaxed or strict alignment observations.

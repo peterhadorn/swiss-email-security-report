@@ -1082,6 +1082,7 @@ def _count_metric_independently(
             "dmarc.partial_pct": ("has_dmarc = ? AND dmarc_pct >= ? AND dmarc_pct < ?", (1, 0, 100), False),
             "dmarc.invalid_pct": ("has_dmarc = ? AND (dmarc_pct < ? OR dmarc_pct > ?)", (1, 0, 100), False),
             "dmarc.strict_alignment": ("has_dmarc = ? AND (dmarc_adkim = ? OR dmarc_aspf = ?)", (1, "s", "s"), False),
+            "dmarc.invalid_alignment": ("has_dmarc = ? AND (dmarc_adkim NOT IN (?, ?) OR dmarc_aspf NOT IN (?, ?))", (1, "r", "s", "r", "s"), False),
         "dmarc.no_mx_detected": ("has_mx = ? AND has_dmarc = ?", (0, 1), False),
         "ds.record_present": (f"{ds} = ?", (1,), False),
         "ns.answer_present": ("ns_hosts IS NOT NULL AND ns_hosts <> ? AND ns_hosts <> ?", ("", "[]"), False),
