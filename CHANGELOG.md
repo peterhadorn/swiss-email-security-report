@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- The separately approved Ed25519 DOI authority fingerprint for v2026.08.2.
 - Repository-local .secrets/ storage is ignored for release credentials such
   as the Zenodo token.
 - Clarification that the scanner repository is public while the DOI-bound

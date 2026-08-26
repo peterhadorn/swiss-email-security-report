@@ -787,7 +787,7 @@ def _load_official_config() -> dict[str, Any]:
     transition = dict(URI_SAFETY_CORE_TRANSITION)
     if config != {
         "release_version": RELEASE_VERSION,
-        "doi_approval_key_fingerprint": "UNCONFIGURED",
+        "doi_approval_key_fingerprint": "8794791863b0cb5c5fe2d7ce5de80b05aacdb4759d92829e7b4e322803d6ab62",
         "source_snapshot_date": "2026-04-12",
         "source_input_normalized_sha256": "be742a42b89dbac80b5296316d35a2d245383e31d15d5df0b1242af8ec9e07c8",
         "source_input_normalized_line_count": 2_459_127,

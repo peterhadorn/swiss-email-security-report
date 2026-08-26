@@ -26,7 +26,7 @@
     "to_measurement_core_sha256": "ffcef30fd2b9c82b59d44af43ac9c3052196199bdff6f3be6ffef78b700b4a18"
   },
   "release_version": "v2026.08.2",
-  "doi_approval_key_fingerprint": "UNCONFIGURED",
+  "doi_approval_key_fingerprint": "8794791863b0cb5c5fe2d7ce5de80b05aacdb4759d92829e7b4e322803d6ab62",
   "resolver_configuration": {
     "cache_policy": "disabled",
     "dnspython_version": "2.8.0",

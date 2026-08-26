@@ -254,9 +254,8 @@ def test_official_configuration_and_schema_pin_every_release_identity():
     }
     assert config["root_run"] == {"mode": "resume_retry_partial_errors", "input_order": "seeded_shuffle_then_limit"}
     assert config["retry_run"] == {"mode": "resume_retry_partial_errors"}
-    assert config["doi_approval_key_fingerprint"] == "UNCONFIGURED"
-    with pytest.raises(ValueError, match="intentionally UNCONFIGURED|user-owned"):
-        bundle._configured_doi_approval_fingerprint()
+    assert config["doi_approval_key_fingerprint"] == "8794791863b0cb5c5fe2d7ce5de80b05aacdb4759d92829e7b4e322803d6ab62"
+    assert bundle._configured_doi_approval_fingerprint() == config["doi_approval_key_fingerprint"]
 
 
 @pytest.mark.parametrize(("field", "value"), [
