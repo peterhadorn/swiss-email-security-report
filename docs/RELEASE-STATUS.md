@@ -1,7 +1,7 @@
 # `v2026.08.2` release status
 
 Last independently verified against the private run manifests, final database,
-and aggregate staging on 25 August 2026.
+sealed assets, DOI record, and live KI-Barometer deployment on 26 August 2026.
 
 ## Completed
 
@@ -16,27 +16,25 @@ and aggregate staging on 25 August 2026.
 - The manifest chain validates its input/output database identities, source
   checksum, scanner revisions, measurement-core transition, resolver settings,
   execution pins, timestamps, and row accounting.
-- Aggregate staging validates against the final database and contains 68
+- The sealed release validates against the final database and contains 68
   canonical metrics, CSV and JSON representations, an aggregate attestation,
-  and a staging release manifest.
-- Release README, methodology, data dictionary, corrections, and release-notes
-  review sources are complete and pass the final document structure contract
-  after injection of DOI-bound metadata; they remain outside staging until a
-  real reservation exists.
+  immutable inventory, DOI-bound metadata, and final release manifest.
+- Release documentation and the DE/FR/IT figure matrix are complete and validated.
 - The complete local test suite passes under the pinned Python 3.12 environment.
 
 ## Completed release gates
 
 - The release owner approved and configured the Ed25519 DOI-authority fingerprint.
-- Zenodo DOI 10.5281/zenodo.22116736 is reserved in an unpublished draft and its signed attestation is bound to aggregate staging.
+- Zenodo DOI 10.5281/zenodo.22116736 is published and resolves to the sealed release assets.
 - The DOI-bound citation, five reviewed documents, and exact 30-file DE/FR/IT figure matrix are generated and validated.
 - The release owner approved and signed the complete prospective artifact tree.
 - The finalizer created the immutable inventory and sealed release directory; all checksums and signatures verify.
+- Commit 721e0b5 is tagged as v2026.08.2 and the tag is published.
+- GitHub and Zenodo publish the same 3,002,167-byte archive with SHA-256 07ec8531d6b257a49abd10d4e9fcb6e06835e63852e6dd8a8b8e7871c32c71f7.
+- KI-Barometer publishes the sealed manifest, aggregate JSON/CSV downloads, DOI, archive links, and indexed DE/FR/IT report pages.
 
-## Remaining controlled gates
+## Publication state
 
-1. Tag the approved commit, publish identical GitHub and Zenodo assets, and verify the DOI and checksums. The scanner repository is already public; no version tag or sealed release asset is published before these gates pass.
-
-The completed measurement and retry do not need to be rerun for these remaining
-steps. Any change to the underlying measurement or measurement-core identity
-would instead require a new release version and provenance chain.
+No controlled release gates remain for v2026.08.2. Any change to the underlying
+measurement or measurement-core identity requires a new release version and
+provenance chain.
