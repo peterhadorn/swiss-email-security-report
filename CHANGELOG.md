@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Repository-local .secrets/ storage is ignored for release credentials such
+  as the Zenodo token.
 - Clarification that the scanner repository is public while the DOI-bound
   aggregate research release remains unsealed and subject to its review gate.
 - Dedicated clean-history repository foundation for the Swiss Email Security

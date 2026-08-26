@@ -21,6 +21,7 @@ samples/
 *scan-results.*
 
 # Local configuration and generated state
+.secrets/
 .env
 .env.*
 __pycache__/
