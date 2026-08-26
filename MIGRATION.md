@@ -28,10 +28,22 @@ SQLite database remains readable without schema changes: consumers must use
 `dmarc_scanner.db.metric_column()` to resolve the canonical measurement names
 to its legacy columns.
 
-The underlying measurement consists of DNS measurements performed 17–19 August
-2026 over the normalized 12 April 2026 SWITCH `.ch` zone snapshot. This
-repository remains private until its release gate is satisfied; it is intended
-to become public only with approved aggregate data and reproducibility assets.
+The archived legacy measurement consists of DNS measurements performed 17–19
+August 2026 over the normalized 12 April 2026 SWITCH `.ch` zone snapshot. Its
+database identity and row accounting remain recorded in
+`provenance/2026-scan.json` as migration and reconciliation evidence.
+
+The `v2026.08.2` release candidate uses the later provenance-enabled run chain
+from 21–23 August 2026. Its root run covered the complete normalized source
+universe. Its linked retry attempted all 148,852 rows retaining an error after
+the root run and reduced that population to 142,615. The release builder binds
+the two manifests, the final database identity, and the aggregate staging; it
+does not treat the archived 17–19 August timestamps as the public measurement
+interval.
+
+This repository remains private until its release gate is satisfied; it is
+intended to become public only with approved aggregate data and reproducibility
+assets.
 
 No raw database, zone input, domain list, hashed-domain list, or domain-level
 result is included or permitted for public release.

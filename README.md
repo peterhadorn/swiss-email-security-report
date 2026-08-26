@@ -4,10 +4,26 @@ Scanner source and reproducibility assets for the Swiss Email Security Report.
 It is a research repository for aggregate, independently verifiable findings
 about DNS-published email-security signals in the Swiss `.ch` namespace.
 
-The repository is private until the release gate. It contains no raw database,
-zone input, domain list, hashed-domain list, sampled-domain list, DNS record
-contents, or domain-level measurement results. Do not add these materials in
-issues, commits, test fixtures, release assets, or derived exports.
+The repository is public, but the research release remains controlled until it
+is sealed. This repository contains no raw database, zone input, domain list,
+hashed-domain list, sampled-domain list, DNS record contents, or domain-level
+measurement results. Do not add these materials in issues, commits, test
+fixtures, release assets, or derived exports.
+
+## Current release state
+
+The `v2026.08.2` measurement run is complete. The provenance-enabled root run
+covered the normalized 2,459,127-domain source universe, and the linked retry
+attempted every one of the 148,852 rows that retained an error after that run.
+The final database contains 2,316,512 analyzable rows and 142,615 rows with a
+retained error status. Aggregate staging contains 68 reconciled metrics and is
+validated against the final database and both run manifests.
+
+The scanner source is public; the aggregate release is not yet sealed. DOI
+reservation and offline approval, the signed scientific/privacy/language
+review, final documentation and figures, and identical GitHub/Zenodo release
+publication remain release-gate steps. See
+`docs/RELEASE-STATUS.md` and `provenance/README.md` for the exact boundary.
 
 ## Scope
 
@@ -61,5 +77,6 @@ use `has_ds_record` and `has_tlsa_record`. Archived SQLite columns remain
 readable through the explicit `metric_column()` adapter and are never migrated
 in place.
 
-See `MIGRATION.md` and `provenance/2026-scan.json` for the scoped clean-history
-import and measurement provenance.
+See `MIGRATION.md`, `provenance/README.md`, and `provenance/2026-scan.json` for
+the scoped clean-history import, archived legacy measurement, and current
+release-candidate provenance.

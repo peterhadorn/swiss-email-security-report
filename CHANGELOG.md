@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Clarification that the scanner repository is public while the DOI-bound
+  aggregate research release remains unsealed and subject to its review gate.
 - Dedicated clean-history repository foundation for the Swiss Email Security
   Report scanner and its email-security test suite.
 - Pinned runtime and development dependency declarations, private-data
@@ -41,3 +43,12 @@ All notable changes to this project are documented in this file.
   those published record values.
 - Aggregate output likewise reports unsupported DMARC alignment-tag values
   separately from valid relaxed or strict alignment observations.
+- Documented the completed `v2026.08.2` full-universe run, exhaustive retained-
+  error retry, final row accounting, and validated aggregate-staging boundary.
+- Clarified that `provenance/scanner-files.sha256` authenticates the clean-import
+  root commit rather than the subsequently evolved scanner files at current
+  `HEAD`.
+- Added complete review sources for the release README, methodology, data
+  dictionary, correction policy, and release notes. They bind the accepted
+  21–23 August run chain and final aggregate identities while remaining
+  explicitly outside the DOI-bound staging tree until external approval.
