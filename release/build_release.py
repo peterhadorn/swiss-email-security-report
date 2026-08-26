@@ -522,7 +522,7 @@ PUBLIC_DOMAIN_FIELDS: Mapping[str, frozenset[tuple[str, ...]]] = {
         ("figures", "*", "repository"),
     }),
     "EDITORIAL-SIGNOFF.json": frozenset({
-        ("signoffs", "*", "reviewer_identity"),
+        ("approval", "approver_identity"),
         ("external_verification", "approver_identity"),
     }),
     "CITATION.cff": frozenset({("repository-code",), ("url",)}),
@@ -546,7 +546,7 @@ PUBLIC_DYNAMIC_DOMAIN_FIELDS: Mapping[str, frozenset[tuple[str, ...]]] = {
         ("figures", "*", "denominator_metric_ids", "*"),
     }),
     "EDITORIAL-SIGNOFF.json": frozenset({
-        ("signoffs", "*", "reviewer_identity"),
+        ("approval", "approver_identity"),
         ("external_verification", "approver_identity"),
     }),
 }
@@ -1360,6 +1360,7 @@ def _assert_public_content_safe(files: Mapping[str, Path]) -> None:
             _assert_safe_public_text(
                 content, f"public text file {relative}",
                 allowed_domain_like=known_domain_like,
+                allowed_ips=APPROVED_PUBLIC_IPS,
             )
 
 
@@ -2526,25 +2527,14 @@ def _validate_editorial_signoff(
         raise ValueError("editorial signoff does not bind the reviewed artifact root")
     reservation_time = _parse_utc_timestamp(reservation["reserved_at_utc"], "reservation time")
     top_time = _parse_utc_timestamp(payload["signed_at_utc"], "editorial signoff time")
-    signed_times = []
-    expected_roles = {
-        "scientific": "scientific-methods-reviewer", "privacy": "privacy-reviewer",
-        "de": "german-language-editor", "fr": "french-language-editor", "it": "italian-language-editor",
-    }
-    identities = set()
-    for role, signoff in payload["signoffs"].items():
-        if signoff["approved"] is not True:
-            raise ValueError(f"editorial {role} signoff is not approved")
-        if signoff["reviewer_role"] != expected_roles[role]:
-            raise ValueError(f"editorial {role} signoff role is not the required review role")
-        if re.search(r"(?:pending|placeholder|example|tbd|todo)", " ".join((signoff["reviewer_name"], signoff["reviewer_identity"])), re.I):
-            raise ValueError(f"editorial {role} signoff reviewer is a placeholder")
-        if signoff["reviewer_identity"] in identities:
-            raise ValueError("editorial signoff reviewer identities must be distinct")
-        identities.add(signoff["reviewer_identity"])
-        signed_times.append(_parse_utc_timestamp(signoff["signed_at_utc"], f"{role} signoff time"))
-    if any(value < reservation_time for value in signed_times) or top_time != max(signed_times):
-        raise ValueError("editorial signoff timestamps do not follow the DOI reservation")
+    approval = payload["approval"]
+    if approval["approved"] is not True or approval["approver_role"] != "release-owner":
+        raise ValueError("release owner approval is invalid")
+    if re.search(r"(?:pending|placeholder|example|tbd|todo)", " ".join((approval["approver_name"], approval["approver_identity"])), re.I):
+        raise ValueError("release owner approval is a placeholder")
+    approval_time = _parse_utc_timestamp(approval["signed_at_utc"], "release owner approval time")
+    if approval_time < reservation_time or top_time != approval_time:
+        raise ValueError("release owner approval timestamp does not follow the DOI reservation")
     verification = payload["external_verification"]
     reservation_verification = reservation["external_verification"]
     configured = _configured_doi_approval_fingerprint()
@@ -2553,6 +2543,9 @@ def _validate_editorial_signoff(
         or verification["approver_name"] != reservation_verification["approver_name"]
         or verification["approver_identity"] != reservation_verification["approver_identity"]
         or verification["approver_role"] != reservation_verification["approver_role"]
+        or approval["approver_name"] != verification["approver_name"]
+        or approval["approver_identity"] != verification["approver_identity"]
+        or approval["approver_role"] != verification["approver_role"]
         or verification["public_key_fingerprint_sha256"] != configured
         or _public_key_fingerprint(public_key) != configured
     ):

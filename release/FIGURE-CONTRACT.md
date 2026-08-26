@@ -134,14 +134,11 @@ Exact document titles and H2 markers:
 - `RELEASE-NOTES.md`: `# Release notes v2026.08.2`; `Release identity`,
   `Included artifacts`, `Known limitations`, `Corrections`.
 
-`EDITORIAL-SIGNOFF.json` records approved, named, identity- and role-bound,
-timestamped signoffs for `scientific`, `privacy`, `de`, `fr`, and `it`, all
-after DOI reservation. Its prospective review catalogue binds the exact bytes
+EDITORIAL-SIGNOFF.json records one named, identity-bound release-owner approval after DOI reservation. Its prospective review catalogue binds the exact bytes
 of every reviewed non-signoff payload, with `release.json` represented by all
 stable semantic fields while derived lifecycle status and inventory are
 excluded. This makes `reviewed_artifact_root_sha256` reproducible and identical
-before and after sealing. The whole signoff, including reviewer identities,
-roles, scope, timestamps, root, and artifact count, is itself signed by the
+before and after sealing. The whole approval, including owner identity, scope, timestamp, root, and artifact count, is signed by the
 configured Ed25519 release authority and is reverified after sealing; changing
 content and freely recomputing the root is insufficient. `CITATION.cff` must not
 include

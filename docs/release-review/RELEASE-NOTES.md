@@ -1,6 +1,6 @@
 # Release notes v2026.08.2
 
-**Review source — not a sealed release file.** Publication awaits the real DOI, DOI-bound figures/documents, distinct signoffs, and final inventory.
+**Review source — not a sealed release file.** Publication awaits final sealing and upload verification.
 
 ## Release identity
 
@@ -22,10 +22,7 @@ Accepted run chain:
 
 ## Included artifacts
 
-The DOI-bound staging contains 68 canonical metrics in JSON and CSV, an aggregate attestation, the signed DOI reservation, citation metadata, five reviewed documents, 30 localized figure files and their manifest, and code and data licenses. The sealed release additionally requires:
-
-- complete checksum inventory;
-- authenticated scientific, privacy, German, French, and Italian signoffs.
+The DOI-bound staging contains 68 canonical metrics in JSON and CSV, an aggregate attestation, the signed DOI reservation, citation metadata, five reviewed documents, 30 localized figure files and their manifest, and code and data licenses. The DOI-bound staging also contains the owner-signed approval of the complete artifact tree. The sealed release additionally requires a complete checksum inventory.
 
 Only aggregate public data are included. Domain-level inputs and results remain private.
 
@@ -51,4 +48,4 @@ Correction contact: `hallo@webevolve.ch`. Public policy: https://ki-barometer.ch
 
 Completed: scan, all-error-row retry, manifest-chain validation, closed database identity, independent aggregate reconciliation, privacy checks, signed DOI reservation, DOI-bound documents and figures, and full local tests.
 
-Remaining controlled gates: five distinct signoffs, final sealing, GitHub and Zenodo publication, and checksum comparison.
+Remaining controlled gates: final sealing, GitHub and Zenodo publication, and checksum comparison.

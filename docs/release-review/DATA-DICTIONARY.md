@@ -11,7 +11,7 @@
 - `figures/manifest.json`: localized figure catalogue with metric IDs, denominators, titles, descriptions, captions, caveats, dimensions, formats, licenses, DOI, and file identities.
 - `checksums.sha256`: final inventory covering every public payload except itself.
 - `doi-reservation.json`: externally approved Zenodo reservation attestation.
-- `EDITORIAL-SIGNOFF.json`: authenticated scientific, privacy, and DE/FR/IT approvals for the prospective artifact tree.
+- EDITORIAL-SIGNOFF.json: owner-signed approval binding the complete prospective artifact tree.
 
 ## Metric fields
 

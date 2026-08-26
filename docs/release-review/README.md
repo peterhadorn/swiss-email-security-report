@@ -28,7 +28,7 @@ The sealed bundle will contain:
 - a DOI reservation attestation and its approved public verification key;
 - German, French, and Italian SVG and PNG figures generated from canonical metric IDs;
 - citation metadata, methodology, data dictionary, release notes, licenses, and correction policy;
-- authenticated scientific, privacy, and language signoff metadata.
+- an owner-signed approval binding the complete public artifact tree.
 
 No domain list, zone snapshot, raw DNS response, domain-level error record, hashed-domain list, or SQLite database is included.
 
@@ -71,4 +71,4 @@ The repository test suite and release validators are the executable specificatio
 
 Completed: full scan, all-error-row retry, manifest-chain validation, closed database identity, independent aggregate reconciliation, 68 canonical metrics, signed DOI reservation, DOI-bound documents and figures, privacy scan, and test suite.
 
-Controlled remaining work: five distinct editorial signoffs, final sealing, GitHub and Zenodo publication, and checksum comparison.
+Controlled remaining work: final sealing, GitHub and Zenodo publication, and checksum comparison.

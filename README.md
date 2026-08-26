@@ -4,26 +4,19 @@ Scanner source and reproducibility assets for the Swiss Email Security Report.
 It is a research repository for aggregate, independently verifiable findings
 about DNS-published email-security signals in the Swiss `.ch` namespace.
 
-The repository is public, but the research release remains controlled until it
-is sealed. This repository contains no raw database, zone input, domain list,
-hashed-domain list, sampled-domain list, DNS record contents, or domain-level
-measurement results. Do not add these materials in issues, commits, test
-fixtures, release assets, or derived exports.
+The repository and sealed aggregate release are public. No raw database, zone input, domain list, hashed-domain list, sampled-domain list, DNS record contents, or domain-level measurement results are published. Do not add these materials in issues, commits, test fixtures, release assets, or derived exports.
+
+## Download the aggregate release
+
+- Zenodo DOI: https://doi.org/10.5281/zenodo.22116736
+- GitHub Release: https://github.com/peterhadorn/swiss-email-security-report/releases/tag/v2026.08.2
+- Dataset page with direct JSON and CSV downloads: https://ki-barometer.ch/datasets/ch-email-security-2026/
+
+The same sealed archive and archive checksum are published on GitHub and Zenodo. The bundle contains 68 aggregate metrics, documentation, 30 DE/FR/IT figures, an authenticated release-owner approval, and whole-tree checksums.
 
 ## Current release state
 
-The `v2026.08.2` measurement run is complete. The provenance-enabled root run
-covered the normalized 2,459,127-domain source universe, and the linked retry
-attempted every one of the 148,852 rows that retained an error after that run.
-The final database contains 2,316,512 analyzable rows and 142,615 rows with a
-retained error status. Aggregate staging contains 68 reconciled metrics and is
-validated against the final database and both run manifests.
-
-The scanner source is public; the aggregate release is not yet sealed. DOI
-reservation and offline approval, the signed scientific/privacy/language
-review, final documentation and figures, and identical GitHub/Zenodo release
-publication remain release-gate steps. See
-`docs/RELEASE-STATUS.md` and `provenance/README.md` for the exact boundary.
+The v2026.08.2 measurement and retry are complete. The final database contains 2,316,512 analyzable rows and 142,615 retained-error rows from the normalized 2,459,127-domain source universe. The aggregate bundle is DOI-bound, owner-approved, sealed, and checksum-verifiable. It contains no domain-level data. See docs/RELEASE-STATUS.md and provenance/README.md for the exact boundary.
 
 ## Scope
 
@@ -59,8 +52,8 @@ python3 analyze_dmarc.py /path/to/dmarc_scan_results.db
 ```
 
 Keep that database outside version control. The scanner source is MIT-licensed
-in `LICENSE`; licensing for a future aggregate dataset and figures is recorded
-with the release itself.
+in `LICENSE`; licensing for the sealed aggregate dataset and figures is recorded
+inside the release bundle.
 
 Each scan writes a private adjacent `*.db.manifest.json` only after SQLite has
 committed, checkpointed, and closed. It records reproducibility metadata such

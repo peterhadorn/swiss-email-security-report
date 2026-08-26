@@ -6,6 +6,11 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- The sealed v2026.08.2 aggregate bundle, permanent DOI, and matching GitHub
+  Release and dataset download locations.
+- A single release-owner signature over the complete artifact tree, replacing
+  the disproportionate five-person editorial gate without weakening checksum,
+  DOI, key-fingerprint, or tamper verification.
 - Privacy-safe prose references to authenticated structured identities instead
   of duplicating raw hashes in release documents.
 - The reviewed WebEvolve correction contact and SECURITY.md reference in the

@@ -30,12 +30,12 @@ and aggregate staging on 25 August 2026.
 - The release owner approved and configured the Ed25519 DOI-authority fingerprint.
 - Zenodo DOI 10.5281/zenodo.22116736 is reserved in an unpublished draft and its signed attestation is bound to aggregate staging.
 - The DOI-bound citation, five reviewed documents, and exact 30-file DE/FR/IT figure matrix are generated and validated.
+- The release owner approved and signed the complete prospective artifact tree.
+- The finalizer created the immutable inventory and sealed release directory; all checksums and signatures verify.
 
 ## Remaining controlled gates
 
-1. Obtain distinct scientific, privacy, German, French, and Italian signoffs and authenticate the complete reviewed artifact tree.
-2. Run the finalizer to create the immutable checksum inventory and sealed release directory.
-3. Tag the approved commit, publish identical GitHub and Zenodo assets, and verify the DOI and checksums. The scanner repository is already public; no version tag or sealed release asset is published before these gates pass.
+1. Tag the approved commit, publish identical GitHub and Zenodo assets, and verify the DOI and checksums. The scanner repository is already public; no version tag or sealed release asset is published before these gates pass.
 
 The completed measurement and retry do not need to be rerun for these remaining
 steps. Any change to the underlying measurement or measurement-core identity

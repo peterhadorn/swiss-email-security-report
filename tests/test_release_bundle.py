@@ -777,18 +777,6 @@ def _complete_staging(staging: Path, release_module, doi: str = "10.5281/zenodo.
     (staging / "LICENSE-DATA.md").write_bytes(release_module.DATA_LICENSE_PATH.read_bytes())
     for name in release_module.DOCUMENT_CONTRACTS:
         (staging / name).write_text(_document_text(name, release_module, doi, interval))
-    signoffs = {
-        role: {
-            "approved": True, "reviewer_name": "Peter Hadorn",
-            "reviewer_identity": f"staff:peter.{role}",
-            "reviewer_role": {
-                "scientific": "scientific-methods-reviewer", "privacy": "privacy-reviewer",
-                "de": "german-language-editor", "fr": "french-language-editor", "it": "italian-language-editor",
-            }[role],
-            "signed_at_utc": "2026-08-21T07:00:00Z",
-        }
-        for role in ("scientific", "privacy", "de", "fr", "it")
-    }
     reviewed_files = {
         path.relative_to(staging).as_posix(): path
         for path in staging.rglob("*") if path.is_file()
@@ -801,14 +789,20 @@ def _complete_staging(staging: Path, release_module, doi: str = "10.5281/zenodo.
         "reviewed_scope": release_module.EDITORIAL_REVIEW_SCOPE,
         "reviewed_artifact_count": len(release_module._reviewed_artifact_entries(reviewed_files)),
         "reviewed_artifact_root_sha256": release_module._reviewed_artifact_root(reviewed_files),
-        "signoffs": signoffs,
+        "approval": {
+            "approved": True,
+            "approver_name": authority["approver_name"],
+            "approver_identity": authority["approver_identity"],
+            "approver_role": "release-owner",
+            "signed_at_utc": "2026-08-21T07:00:00Z",
+        },
         "external_verification": {
             "verification_version": 1,
             "authority_name": authority["authority_name"],
             "approver_name": authority["approver_name"],
             "approver_identity": authority["approver_identity"],
             "approver_role": authority["approver_role"],
-            "scope": "prospective-editorial-review-v1",
+            "scope": "release-owner-artifact-approval-v1",
             "signature_algorithm": "ed25519-openssl-pkeyutl-raw-v1",
             "public_key_fingerprint_sha256": authority["public_key_fingerprint_sha256"],
         },
@@ -1152,7 +1146,7 @@ def test_cff_safe_parser_licenses_documents_and_signoffs_fail_closed(tmp_path, r
     staging, _database, _manifests = _stage(tmp_path / "signoff", release_module)
     _complete_staging(staging, release_module)
     signoff = json.loads((staging / "EDITORIAL-SIGNOFF.json").read_text())
-    signoff["signoffs"]["fr"]["approved"] = False
+    signoff["approval"]["approved"] = False
     (staging / "EDITORIAL-SIGNOFF.json").write_text(json.dumps(signoff))
     with pytest.raises(ValueError, match="signoff|approved"):
         release_module.finalize_release(staging_directory=staging)
@@ -1397,6 +1391,15 @@ def test_every_public_text_family_rejects_unapproved_identifiers(
         files[name] = path
     with pytest.raises(ValueError, match="unapproved|raw hash|IP|domain"):
         release_module._assert_public_content_safe(files)
+
+
+def test_markdown_allows_only_pinned_public_resolver_ips(tmp_path, release_module):
+    readme = tmp_path / "README.md"
+    readme.write_text("Pinned resolver: 1.1.1.1")
+    release_module._assert_public_content_safe({"README.md": readme})
+    readme.write_text("Unapproved resolver: 82.21.4.94")
+    with pytest.raises(ValueError, match="unapproved IP"):
+        release_module._assert_public_content_safe({"README.md": readme})
 
 
 @pytest.mark.parametrize("leak", [
@@ -1747,20 +1750,20 @@ def test_svg_realistic_long_caption_uses_exact_visible_multiline_layout(release_
     assert release_module._validate_svg(content, item) == (1600, 900)
 
 
-def test_editorial_signoff_cannot_be_mutated_or_freely_recomputed(
+def test_release_owner_approval_cannot_be_mutated_or_freely_recomputed(
     tmp_path, release_module,
 ):
     staging, _database, _manifests = _stage(tmp_path, release_module)
     _complete_staging(staging, release_module)
     signoff_path = staging / "EDITORIAL-SIGNOFF.json"
     signoff = json.loads(signoff_path.read_text())
-    signoff["signoffs"]["fr"]["reviewer_name"] = "Mallory Smith"
+    signoff["approval"]["approver_name"] = "Mallory Smith"
     signoff["reviewed_artifact_root_sha256"] = release_module._reviewed_artifact_root({
         path.relative_to(staging).as_posix(): path
         for path in staging.rglob("*") if path.is_file()
     })
     signoff_path.write_text(json.dumps(signoff, sort_keys=True, indent=2) + "\n")
-    with pytest.raises(ValueError, match="editorial signoff signature"):
+    with pytest.raises(ValueError, match="editorial signoff (?:authority|signature)"):
         release_module.finalize_release(staging_directory=staging)
 
 
