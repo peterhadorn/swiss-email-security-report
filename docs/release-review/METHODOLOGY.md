@@ -7,11 +7,11 @@
 The fixed source universe is the normalized SWITCH `.ch` zone snapshot dated 12 April 2026:
 
 - normalized line count: 2,459,127;
-- normalized SHA-256: `be742a42b89dbac80b5296316d35a2d245383e31d15d5df0b1242af8ec9e07c8`.
+- normalized source identity: authenticated in release.json.
 
 The source universe is a domain corpus, not a company register. One organization may control multiple domains; domains may be inactive, private, parked, delegated for specialized functions, or unrelated to inbound mail.
 
-The zone snapshot and domain list are not distributed. Their checksum and normalized count permit identity checks without publishing the finite source list.
+The zone snapshot and domain list are not distributed. The authenticated source identity and normalized count permit identity checks without publishing the finite source list.
 
 ## Measurement interval
 
@@ -42,10 +42,7 @@ The scanner performed DNS queries only. It did not send e-mail, inspect mailboxe
 
 ## Aggregation
 
-After the accepted retry, aggregation opened the final SQLite database once using an explicit read-only URI and one read transaction. The database identity is:
-
-- bytes: 3,478,831,104;
-- SHA-256: `a503dab7c0079c8b14f22b274592be1a7b3fc39deec9d9c0acd4e66c7729a575`.
+After the accepted retry, aggregation opened the final SQLite database once using an explicit read-only URI and one read transaction. The private database identity and size are authenticated in aggregate-attestation.json.
 
 Two independent COUNT-only SQL catalogues computed all 68 public metrics against the same snapshot. The exporter compared their values metric by metric and validated:
 

@@ -69,6 +69,6 @@ The repository test suite and release validators are the executable specificatio
 
 **Review status.**
 
-Completed: full scan, all-error-row retry, manifest-chain validation, closed database identity, independent aggregate reconciliation, 68 canonical metrics, aggregate staging, privacy scan, and test suite.
+Completed: full scan, all-error-row retry, manifest-chain validation, closed database identity, independent aggregate reconciliation, 68 canonical metrics, signed DOI reservation, DOI-bound documents and figures, privacy scan, and test suite.
 
-Controlled remaining work: real DOI reservation and approval binding, DOI-bound figures and documents, five distinct editorial signoffs, final sealing, GitHub/Zenodo publication, checksum comparison, and repository visibility change.
+Controlled remaining work: five distinct editorial signoffs, final sealing, GitHub and Zenodo publication, and checksum comparison.

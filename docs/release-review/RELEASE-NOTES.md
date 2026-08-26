@@ -10,26 +10,21 @@ Source universe:
 
 - normalized SWITCH `.ch` zone snapshot dated 12 April 2026;
 - 2,459,127 normalized domains;
-- SHA-256 `be742a42b89dbac80b5296316d35a2d245383e31d15d5df0b1242af8ec9e07c8`.
+- authenticated source identity in release.json.
 
 Accepted run chain:
 
 - full run: 2,459,127 attempted; 2,310,275 analyzable and 148,852 errors;
 - linked retry: all 148,852 error rows attempted; 2,316,512 analyzable and 142,615 errors final;
 - public interval: 2026-08-21T21:05:22.017897Z/2026-08-23T18:02:41.508091Z;
-- final private database: 3,478,831,104 bytes; SHA-256 `a503dab7c0079c8b14f22b274592be1a7b3fc39deec9d9c0acd4e66c7729a575`;
-- final manifest SHA-256: `3f33f98a6d2924ed3b34e64af9dcb433083d722f6977df625f4d7ad930f70cd6`.
+- final private database identity and size authenticated in aggregate-attestation.json;
+- final manifest identity authenticated in release.json and aggregate-attestation.json.
 
 ## Included artifacts
 
-The completed aggregate staging contains 68 canonical metrics in JSON and CSV, an aggregate attestation, and a lifecycle manifest. The sealed release additionally requires:
+The DOI-bound staging contains 68 canonical metrics in JSON and CSV, an aggregate attestation, the signed DOI reservation, citation metadata, five reviewed documents, 30 localized figure files and their manifest, and code and data licenses. The sealed release additionally requires:
 
 - complete checksum inventory;
-- DOI reservation attestation and approved public key;
-- citation metadata;
-- methodology, data dictionary, correction policy, release README, and these release notes;
-- 30 localized figure files plus their manifest;
-- code and data licenses;
 - authenticated scientific, privacy, German, French, and Italian signoffs.
 
 Only aggregate public data are included. Domain-level inputs and results remain private.
@@ -54,6 +49,6 @@ Correction contact: `hallo@webevolve.ch`. Public policy: https://ki-barometer.ch
 
 **Publication state.**
 
-Completed: scan, all-error-row retry, manifest-chain validation, closed database identity, independent aggregate reconciliation, privacy checks, aggregate staging, and full local tests.
+Completed: scan, all-error-row retry, manifest-chain validation, closed database identity, independent aggregate reconciliation, privacy checks, signed DOI reservation, DOI-bound documents and figures, and full local tests.
 
-Remaining controlled gates: DOI approval/reservation, DOI-bound figure/document generation, five distinct signoffs, final sealing, GitHub and Zenodo publication, checksum comparison, and repository visibility change.
+Remaining controlled gates: five distinct signoffs, final sealing, GitHub and Zenodo publication, and checksum comparison.

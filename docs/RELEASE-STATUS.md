@@ -25,23 +25,17 @@ and aggregate staging on 25 August 2026.
   real reservation exists.
 - The complete local test suite passes under the pinned Python 3.12 environment.
 
+## Completed release gates
+
+- The release owner approved and configured the Ed25519 DOI-authority fingerprint.
+- Zenodo DOI 10.5281/zenodo.22116736 is reserved in an unpublished draft and its signed attestation is bound to aggregate staging.
+- The DOI-bound citation, five reviewed documents, and exact 30-file DE/FR/IT figure matrix are generated and validated.
+
 ## Remaining controlled gates
 
-These steps require external approval or reviewed release content and must not
-be replaced with placeholders:
-
-1. Configure the separately approved Ed25519 DOI-approval key fingerprint.
-2. Reserve the Zenodo DOI and bind its authenticated reservation attestation to
-   the existing aggregate staging.
-3. Promote the reviewed documents with the real DOI, add `CITATION.cff`, and
-   generate the DOI-bound DE/FR/IT SVG and PNG figure matrix.
-4. Obtain distinct scientific, privacy, German, French, and Italian signoffs and
-   authenticate the complete reviewed artifact tree.
-5. Run the finalizer to create the immutable checksum inventory and sealed
-   `v2026.08.2` directory.
-6. Tag the approved commit, publish identical GitHub and Zenodo assets, and
-   verify the DOI and checksums. The scanner repository is already public; no
-   version tag or sealed release asset is published before these gates pass.
+1. Obtain distinct scientific, privacy, German, French, and Italian signoffs and authenticate the complete reviewed artifact tree.
+2. Run the finalizer to create the immutable checksum inventory and sealed release directory.
+3. Tag the approved commit, publish identical GitHub and Zenodo assets, and verify the DOI and checksums. The scanner repository is already public; no version tag or sealed release asset is published before these gates pass.
 
 The completed measurement and retry do not need to be rerun for these remaining
 steps. Any change to the underlying measurement or measurement-core identity

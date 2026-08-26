@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Privacy-safe prose references to authenticated structured identities instead
+  of duplicating raw hashes in release documents.
+- The reviewed WebEvolve correction contact and SECURITY.md reference in the
+  strict public-text privacy catalogue.
 - The separately approved Ed25519 DOI authority fingerprint for v2026.08.2.
 - Repository-local .secrets/ storage is ignored for release credentials such
   as the Zenodo token.

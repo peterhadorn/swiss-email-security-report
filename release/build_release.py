@@ -217,7 +217,7 @@ APPROVED_LOCALIZED_INTERVAL = {
     "de": "Messzeitraum", "fr": "Période de mesure", "it": "Periodo di misurazione",
 }
 SAFE_PUBLIC_DOMAINS = frozenset({
-    "github.com", "doi.org", "creativecommons.org", "ki-barometer.ch", "www.w3.org",
+    "github.com", "doi.org", "creativecommons.org", "ki-barometer.ch", "security.md", "webevolve.ch", "www.w3.org",
 })
 APPROVED_PUBLIC_IPS = frozenset({"1.1.1.1", "8.8.8.8", "9.9.9.9", "1.0.0.1", "8.8.4.4"})
 UNICODE_DOMAIN_RE = re.compile(
