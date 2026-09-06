@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Measurement interpretation — 2026-09-06
+
+- Documented historical DMARC parsing, DKIM key-length, DS-presence and sampling
+  limitations without changing sealed v2026.08.2 data or measurement-core bytes.
+- Added a separately tested future DKIM parser candidate: exclude Ed25519 and
+  unknown algorithms from the RSA length heuristic; recognise combined testing
+  flags. Integration requires a new measurement-core version and provenance.
+- Linked the four-language public report, aggregate downloads and chart gallery.
+
 ### Added
 
 - The sealed v2026.08.2 aggregate bundle, permanent DOI, and matching GitHub

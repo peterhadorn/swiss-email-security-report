@@ -7,6 +7,18 @@ from dmarc_scanner.parsers import (
 
 # --- record-type identification -------------------------------------------
 
+def test_ed25519_is_not_a_weak_rsa_key():
+    from dmarc_scanner.experimental_dkim import parse_dkim_candidate as parse_dkim
+    assert parse_dkim("v=DKIM1; k=ed25519; p=11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=")["weak_key"] is False
+    assert parse_dkim("v=DKIM1; k=unknown; p=short")["weak_key"] is False
+    assert parse_dkim("v=DKIM1; p=short")["weak_key"] is True
+
+
+def test_combined_dkim_testing_flags():
+    from dmarc_scanner.experimental_dkim import parse_dkim_candidate as parse_dkim
+    assert parse_dkim("v=DKIM1; t=s:y; p=key")["testing_mode"] is True
+    assert parse_dkim("v=DKIM1; t=s; p=key")["testing_mode"] is False
+
 def test_is_spf_record():
     assert is_spf_record("v=spf1 -all") is True
     assert is_spf_record("V=SPF1 include:_spf.google.com ~all") is True

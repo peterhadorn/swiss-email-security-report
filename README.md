@@ -73,3 +73,12 @@ in place.
 See `MIGRATION.md`, `provenance/README.md`, and `provenance/2026-scan.json` for
 the scoped clean-history import, archived legacy measurement, and current
 release-candidate provenance.
+
+## Measurement interpretation update — September 2026
+
+See [known measurement limitations](docs/KNOWN-MEASUREMENT-LIMITATIONS.md)
+before interpreting DMARC validity, DKIM key strength, or DNSSEC figures.
+The published v2026.08.2 archive and metrics remain unchanged. The report and
+aggregate downloads are now also prepared in English:
+[report](https://ki-barometer.ch/en/swiss-email-security-report/) ·
+[data and charts](https://ki-barometer.ch/en/datasets/ch-email-security-2026/).
