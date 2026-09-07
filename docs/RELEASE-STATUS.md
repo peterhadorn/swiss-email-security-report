@@ -3,6 +3,23 @@
 Last independently verified against the private run manifests, final database,
 sealed assets, DOI record, and live KI-Barometer deployment on 26 August 2026.
 
+## Website and documentation update: 7 September 2026
+
+- The report and dataset pages are now available in German, French, Italian
+  and English. All four are linked from the repository README.
+- The website provides updated editorial charts in all four languages, derived
+  from the unchanged release metrics. Their source and generated assets live in
+  the KI-Barometer website repository.
+- Website copy, chart labels and expandable technical explanations were updated.
+  These presentation changes do not modify the sealed data or archive.
+- The archive still contains the original 30 German, French and Italian figure
+  files. English and newer editorial charts are separate website downloads.
+- This documentation update does not claim a new independent verification of
+  the private measurements. The verification date above remains 26 August 2026.
+
+The repository's default development branch is now named main. The published
+v2026.08.2 tag and release assets retain their existing identities.
+
 ## Completed
 
 - The provenance-enabled root run covered the complete normalized 2,459,127-

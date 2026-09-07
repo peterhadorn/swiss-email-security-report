@@ -10,15 +10,26 @@ always mean the technology is unused.
 
 ## Read the report or download the data
 
-- [Report in English](https://ki-barometer.ch/en/swiss-email-security-report/)
-- [Data and charts in English](https://ki-barometer.ch/en/datasets/ch-email-security-2026/)
-- [Dataset page and downloads](https://ki-barometer.ch/datasets/ch-email-security-2026/)
+| Language | Report | Data and current charts |
+| --- | --- | --- |
+| Deutsch | [Artikel](https://ki-barometer.ch/schweizer-e-mail-sicherheitsreport/) | [Daten und Grafiken](https://ki-barometer.ch/datasets/ch-email-security-2026/) |
+| Français | [Rapport](https://ki-barometer.ch/fr/rapport-securite-e-mail-suisse/) | [Données et graphiques](https://ki-barometer.ch/fr/datasets/ch-email-security-2026/) |
+| Italiano | [Rapporto](https://ki-barometer.ch/it/rapporto-sicurezza-email-svizzera/) | [Dati e grafici](https://ki-barometer.ch/it/datasets/ch-email-security-2026/) |
+| English | [Report](https://ki-barometer.ch/en/swiss-email-security-report/) | [Data and charts](https://ki-barometer.ch/en/datasets/ch-email-security-2026/) |
+
 - [Published dataset on Zenodo](https://doi.org/10.5281/zenodo.22116736)
 - [GitHub release v2026.08.2](https://github.com/peterhadorn/swiss-email-security-report/releases/tag/v2026.08.2)
 
 The published bundle contains 68 aggregate metrics, documentation, 30 figures
 in German, French and Italian, checksums, and a signed release-owner approval.
 The GitHub and Zenodo downloads contain the same sealed archive.
+
+The website also provides newer editorial charts in German, French, Italian
+and English. These use the unchanged release metrics with updated wording and
+presentation. They are maintained in the
+[KI-Barometer website repository](https://github.com/peterhadorn/ki-barometer),
+not added to the sealed archive. Use the language links above to download the
+current charts. The original 30 archived figures remain available in v2026.08.2.
 
 ## What was measured?
 

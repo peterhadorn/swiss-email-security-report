@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Publication navigation — 2026-09-07
+
+- Link all four report languages and their data/chart download pages.
+- Distinguish current website charts from the original sealed figure archive.
+- Document the September website updates separately from the August private-data
+  verification and rename the default development branch to main.
+
 ### Review fixes — 2026-09-07
 
 - Preserve the sealed release if staging cleanup fails, and require the signed
