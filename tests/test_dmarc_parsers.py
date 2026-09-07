@@ -1,3 +1,4 @@
+import pytest
 from dmarc_scanner.parsers import (
     find_first, is_bimi_record, is_dkim_record, is_dmarc_record,
     is_mta_sts_record, is_spf_record, is_tlsrpt_record,
@@ -281,3 +282,17 @@ def test_parse_dkim_2048_bit_length_key_not_flagged_weak():
     # SubjectPublicKeyInfo base64-encodes to 392 characters.
     r = parse_dkim("v=DKIM1; k=rsa; p=" + "A" * 392)
     assert r["weak_key"] is False
+
+
+@pytest.mark.parametrize("record,policy,count", [
+    ("v=spf1 +all -all", "pass", 0),
+    ("v=spf1 -all +all", "hardfail", 0),
+    ("v=spf1 a ~all mx", "softfail", 1),
+    ("v=spf1 redirect=case-target a -all", "hardfail", 1),
+    ("v=spf1 a -all redirect=case-target", "hardfail", 1),
+    ("v=spf1 a redirect=case-target", "none", 2),
+])
+def test_spf_ignores_mechanisms_after_first_all_and_disabled_redirect(record, policy, count):
+    result = parse_spf(record)
+    assert result["all_mechanism"] == policy
+    assert result["lookup_count"] == count

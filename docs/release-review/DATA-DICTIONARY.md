@@ -1,6 +1,7 @@
 # Data dictionary
 
-**Review source — not a sealed release file.** Final metadata will bind this content to the real DOI and authenticated inventory.
+**Historical pre-publication review source — not a sealed release file.**
+For current publication status, see [release status](../RELEASE-STATUS.md). Final metadata will bind this content to the real DOI and authenticated inventory.
 
 ## File catalogue
 

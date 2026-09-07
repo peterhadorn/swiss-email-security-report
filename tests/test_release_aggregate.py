@@ -300,3 +300,42 @@ def test_metrics_json_schema_validates_real_metric_instances():
     finally:
         conn.close()
     jsonschema.Draft202012Validator(schema).validate(instance)
+
+
+
+def test_scanner_exception_is_excluded_without_blocking_other_aggregates(tmp_path, monkeypatch):
+    import dmarc_scan
+    from release.aggregate import aggregate_database
+    from dmarc_scanner.scan import scan_domain
+
+    def simulated_scan(domain, query, query_batch=None):
+        if domain == "case-02":
+            raise RuntimeError("synthetic parser failure")
+        return scan_domain(domain, query, query_batch)
+
+    monkeypatch.setattr(dmarc_scan, "scan_domain", simulated_scan)
+    path = tmp_path / "exception.db"
+    dmarc_scan.run(["case-01", "case-02"], str(path), concurrency=1, resume=False,
+                   query_fn=lambda *_: ("noanswer", []))
+    metrics = {m.metric_id: m for m in aggregate_database(path, "synthetic interval")}
+    assert metrics["population.total"].numerator == 2
+    assert metrics["population.error"].numerator == 1
+    assert metrics["population.analyzable"].numerator == 1
+
+
+def test_dmarc_population_and_overlapping_alignment_are_described_accurately():
+    from release.aggregate import aggregate_connection
+    conn = sqlite3.connect(":memory:")
+    create_table(conn)
+    insert_result(conn, DmarcScanResult(domain="case-01", has_dmarc=True,
+                  dmarc_policy="reject", dmarc_adkim="s", dmarc_aspf="invalid"))
+    insert_result(conn, DmarcScanResult(domain="case-02"))
+    conn.commit()
+    metrics = {m.metric_id: m for m in aggregate_connection(conn, "synthetic interval")}
+    conn.close()
+    assert metrics["dmarc.detected_all"].numerator == 1
+    assert metrics["dmarc.detected_all"].denominator == 2
+    assert metrics["dmarc.detected_all"].population == "all analyzable scan rows"
+    assert metrics["dmarc.strict_alignment"].numerator == 1
+    assert metrics["dmarc.invalid_alignment"].numerator == 1
+    assert "overlap" in metrics["dmarc.invalid_alignment"].caveat

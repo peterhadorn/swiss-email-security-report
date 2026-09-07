@@ -9,9 +9,8 @@ adds `doi-reservation.json` and the canonical public Ed25519 key
 covers every reservation and approval-authority field. Binding, finalization,
 and post-seal verification all authenticate that signature against the DER key
 and the independently pinned SHA-256 key fingerprint. The production
-configuration deliberately remains `UNCONFIGURED` until the release owner
-supplies and reviews a real user-owned key; no placeholder key can bind or seal
-a release. Figure generation may read only `metrics.json`, `release.json`,
+configuration contains the release owner’s approved key fingerprint; no
+placeholder key can bind or seal a release. Figure generation may read only `metrics.json`, `release.json`,
 `aggregate-attestation.json`, and `doi-reservation.json`. The DOI in the
 reservation is final for every later artifact.
 
@@ -91,8 +90,10 @@ placement, duplicate ARIA nodes, and later opaque occlusion.
 
 Displayed percentages use the locale decimal comma in DE, FR, and IT, and each
 prominent value visibly includes its exact numerator and denominator. The
-social accent stripe occupies only the metric area and cannot intersect the
-kicker, source, or DOI baselines.
+social metric area starts below the wrapped caption. Labels wrap within their
+columns, and the accent stripe cannot intersect the kicker, source, or DOI
+baselines. These layout corrections apply to newly generated figures only;
+previously sealed files remain unchanged.
 
 PNG files are RGB or RGBA, exact-size renders of their SVG partner. The renderer
 parses the already validated SVG and rasterizes its rectangles and text with

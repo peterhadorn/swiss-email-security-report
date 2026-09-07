@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Review fixes — 2026-09-07
+
+- Preserve the sealed release if staging cleanup fails, and require the signed
+  release files during verification. Add a public `verify` CLI command.
+- Allow retained scanner-exception rows to be excluded from aggregate results
+  without blocking the entire export.
+- Correct SPF parsing for the first `all` mechanism and disabled `redirect`
+  terms. Preserve exact historical core bytes for release verification; new
+  scans use a different core identity and cannot resume the historical scan.
+- Correct DMARC denominator and overlapping-alignment descriptions without
+  changing their counting rules.
+- Prevent caption and label overlap in localized social cards.
+- Rewrite the README and clarify publication state, interpretation limits,
+  and what public verification can establish without private measurements.
+- Add regression coverage: 418 tests pass, and the original published archive
+  still passes checksum and signature verification. Sealed assets are unchanged.
+
 ### Measurement interpretation — 2026-09-06
 
 - Documented historical DMARC parsing, DKIM key-length, DS-presence and sampling

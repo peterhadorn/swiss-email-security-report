@@ -237,3 +237,33 @@ def test_runtime_catalogue_and_font_are_declared_as_wheel_package_data():
     assert "charts.json" in packaged
     assert "fonts/*.ttf" in packaged
     assert "fonts/*.txt" in packaged
+
+
+@pytest.mark.parametrize("locale", ["de", "fr", "it"])
+def test_social_card_large_counts_do_not_overlap_caption_or_columns(doi_staging, locale):
+    from dataclasses import replace
+    from PIL import ImageFont
+    stage, bundle = doi_staging
+    release = bundle._load_json(stage / "release.json", "release")
+    release["doi"] = "10.5281/zenodo.22116736"
+    metrics = bundle._metric_objects(bundle._load_json(stage / "metrics.json", "metrics"))
+    metrics = tuple(replace(m, numerator=m.numerator * 1000000,
+                            denominator=m.denominator * 1000000) for m in metrics)
+    item = renderer._entry("social-report-card", locale, "svg", release, metrics)
+    svg = renderer._svg_chart(item, renderer._metric_map(metrics))
+    bundle._validate_svg(svg, item)
+    root = ET.fromstring(svg)
+    nodes = root.findall(".//{http://www.w3.org/2000/svg}text")
+    kicker = next(n for n in nodes if n.text == renderer.KICKERS["social-report-card"][locale])
+    caption_bottom = bundle._svg_required_text_layout(item)[-3][2]
+    assert int(kicker.attrib["y"]) - 16 > caption_bottom
+    for node in nodes:
+        if node.attrib.get("font-size") != "14":
+            continue
+        font = ImageFont.truetype(BytesIO(bundle._figure_font_bytes()), size=14,
+                                 layout_engine=ImageFont.Layout.BASIC)
+        font.set_variation_by_axes([14, 600])
+        assert font.getlength(node.text or "") <= 490
+        assert int(node.attrib["y"]) < 530
+    image = renderer._rasterized_image(svg)
+    assert image.size == (1200, 630)

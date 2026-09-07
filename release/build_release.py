@@ -2693,35 +2693,36 @@ def _verify_checksums(directory: Path) -> None:
             raise ValueError(f"checksum verification failed for {name}")
     # A sealed bundle must still authenticate its DOI and prospective editorial
     # review, not merely reproduce its checksums.
-    if (directory / "doi-reservation.json").exists():
-        reservation = _verify_bundled_reservation(actual)
-        release = _load_json(actual["release.json"], "sealed release")
-        _validate_instance(RELEASE_SCHEMA_PATH, release, "sealed release")
-        if release["status"] != "sealed" or release["doi"] != reservation["doi"]:
-            raise ValueError("sealed release DOI or lifecycle status differs from reservation")
-        expected_inventory = []
-        for name, path in sorted(actual.items()):
-            if name in {"release.json", "checksums.sha256"}:
-                continue
-            digest, size = _sha256_and_size(path)
-            expected_inventory.append({
-                "name": name, "sha256": digest, "bytes": size,
-                "media_type": _mime_type(name),
-            })
-        if release["inventory"] != expected_inventory:
-            raise ValueError("sealed release inventory differs from the exact public tree")
-        reservation_identity = _sha256_and_size(actual["doi-reservation.json"])
-        if release["doi_reservation_file"] != {
-            "name": "doi-reservation.json", "sha256": reservation_identity[0],
-            "bytes": reservation_identity[1],
-        }:
-            raise ValueError("sealed release DOI reservation inventory differs from its bytes")
-        _validate_aggregate_components(actual, expected_status="sealed")
-        _validate_editorial_signoff(
-            actual["EDITORIAL-SIGNOFF.json"], doi=release["doi"],
-            reservation=reservation, files=actual,
-            public_key=actual["doi-approval-public.der"],
-        )
+    if not REQUIRED_FINAL_FILES.issubset(actual):
+        raise ValueError("sealed release is missing required public files")
+    reservation = _verify_bundled_reservation(actual)
+    release = _load_json(actual["release.json"], "sealed release")
+    _validate_instance(RELEASE_SCHEMA_PATH, release, "sealed release")
+    if release["status"] != "sealed" or release["doi"] != reservation["doi"]:
+        raise ValueError("sealed release DOI or lifecycle status differs from reservation")
+    expected_inventory = []
+    for name, path in sorted(actual.items()):
+        if name in {"release.json", "checksums.sha256"}:
+            continue
+        digest, size = _sha256_and_size(path)
+        expected_inventory.append({
+            "name": name, "sha256": digest, "bytes": size,
+            "media_type": _mime_type(name),
+        })
+    if release["inventory"] != expected_inventory:
+        raise ValueError("sealed release inventory differs from the exact public tree")
+    reservation_identity = _sha256_and_size(actual["doi-reservation.json"])
+    if release["doi_reservation_file"] != {
+        "name": "doi-reservation.json", "sha256": reservation_identity[0],
+        "bytes": reservation_identity[1],
+    }:
+        raise ValueError("sealed release DOI reservation inventory differs from its bytes")
+    _validate_aggregate_components(actual, expected_status="sealed")
+    _validate_editorial_signoff(
+        actual["EDITORIAL-SIGNOFF.json"], doi=release["doi"],
+        reservation=reservation, files=actual,
+        public_key=actual["doi-approval-public.der"],
+    )
 
 
 def _copy_to_fresh_inode(source: Path, destination: Path) -> None:
@@ -2814,8 +2815,6 @@ def finalize_release(*, staging_directory: str | Path) -> Path:
         os.replace(finalizing, final)
         os.chmod(final, 0o555)
         _fsync_directory(root)
-        shutil.rmtree(staging)
-        _fsync_directory(root)
     except Exception:
         try:
             if not finalizing.exists() and final.exists():
@@ -2831,6 +2830,9 @@ def finalize_release(*, staging_directory: str | Path) -> Path:
         except OSError:
             pass
         raise
+    # Promotion is committed. Cleanup failure must leave the verified final intact.
+    shutil.rmtree(staging)
+    _fsync_directory(root)
     return final
 
 
@@ -2850,8 +2852,13 @@ def main(argv: list[str] | None = None) -> int:
     bind_parser.add_argument("--approved-key-fingerprint", required=True)
     final_parser = subparsers.add_parser("finalize", help="seal reviewed staging")
     final_parser.add_argument("--staging-directory", required=True)
+    verify_parser = subparsers.add_parser("verify", help="authenticate an extracted sealed release")
+    verify_parser.add_argument("--directory", required=True, type=Path)
     args = parser.parse_args(argv)
-    if args.command == "stage":
+    if args.command == "verify":
+        _verify_checksums(args.directory)
+        print("Release checksums and signatures verified.")
+    elif args.command == "stage":
         stage_release(
             database=args.database, output_directory=args.output_directory,
             manifest_paths=args.manifests, manifest_directory=args.manifest_directory,

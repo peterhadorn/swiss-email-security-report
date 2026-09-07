@@ -127,22 +127,47 @@ def _svg_required_layer(item: Mapping[str, Any]) -> str:
     return "".join(nodes)
 
 
+def _social_label_lines(label: str, width: int = 490) -> list[str]:
+    font = ImageFont.truetype(BytesIO(contract._figure_font_bytes()), size=14,
+                              layout_engine=ImageFont.Layout.BASIC)
+    font.set_variation_by_axes([14, 600])
+    lines: list[str] = []
+    for word in label.split():
+        candidate = f"{lines[-1]} {word}" if lines else word
+        if lines and font.getlength(candidate) <= width:
+            lines[-1] = candidate
+        else:
+            if font.getlength(word) > width:
+                raise ValueError("social label contains a word wider than its column")
+            lines.append(word)
+    return lines
+
+
 def _svg_social_visual(item: Mapping[str, Any], metrics: Mapping[str, contract.Metric]) -> str:
     labels = _visual_labels(item["chart_id"], item["locale"])
+    caption_bottom = contract._svg_required_text_layout(item)[-3][2]
+    kicker_y = max(260, caption_bottom + 32)
+    value_top = kicker_y + 58
+    line_groups = [_social_label_lines(label) for label in labels]
+    first_row_lines = max(len(lines) for lines in line_groups[:2])
+    row_gap = max(100, 36 + first_row_lines * 18 + 38)
+    bottom = value_top + row_gap + 27 + max(len(lines) for lines in line_groups[2:]) * 18 + 8
+    if bottom > int(item["height"]) - 90:
+        raise ValueError("social card content does not fit above source and DOI")
     nodes = [
-        _svg_text(60, 260, KICKERS[item["chart_id"]][item["locale"]], size=16, fill=RED, weight=700),
-        '<rect x="60" y="284" width="10" height="210" fill="#e30613"/>',
+        _svg_text(60, kicker_y, KICKERS[item["chart_id"]][item["locale"]], size=16, fill=RED, weight=700),
+        f'<rect x="60" y="{value_top - 34}" width="10" height="{bottom - value_top + 34}" fill="#e30613"/>',
     ]
-    for index, (identifier, label) in enumerate(zip(item["metric_ids"], labels, strict=True)):
+    for index, (identifier, lines) in enumerate(zip(item["metric_ids"], line_groups, strict=True)):
         metric = metrics[identifier]
         column, row = index % 2, index // 2
-        x, y = 90 + column * 535, 318 + row * 100
+        x, y = 90 + column * 535, value_top + row * row_gap
         value = f"{contract._localized_number(metric.display_percentage, item['locale'])} %"
-        nodes.extend((
-            _svg_text(x, y, value, size=36, weight=700),
-            _svg_text(x, y + 27, label, size=14, weight=600),
-            _svg_text(x, y + 49, f"({metric.numerator}/{metric.denominator})", size=13),
-        ))
+        nodes.append(_svg_text(x, y, value, size=36, weight=700))
+        nodes.extend(_svg_text(x, y + 27 + line * 18, label, size=14, weight=600)
+                     for line, label in enumerate(lines))
+        nodes.append(_svg_text(x, y + 27 + len(lines) * 18 + 4,
+                               f"({metric.numerator}/{metric.denominator})", size=13))
     return f'<g>{"".join(nodes)}</g>'
 
 
