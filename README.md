@@ -26,9 +26,8 @@ The GitHub and Zenodo downloads contain the same sealed archive.
 
 The website also provides newer editorial charts in German, French, Italian
 and English. These use the unchanged release metrics with updated wording and
-presentation. They are maintained in the
-[KI-Barometer website repository](https://github.com/peterhadorn/ki-barometer),
-not added to the sealed archive. Use the language links above to download the
+presentation. They are maintained with the KI-Barometer website, separately
+from the sealed archive. Use the language links above to download the
 current charts. The original 30 archived figures remain available in v2026.08.2.
 
 ## What was measured?
