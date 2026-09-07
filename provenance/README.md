@@ -49,5 +49,18 @@ The manifests and database remain private because they bind domain-level
 measurement state. Public staging contains only the sanitized run-chain
 metadata, aggregate attestation, 68 metrics, and their reconciled CSV/JSON
 representations. The DOI, signed editorial review, final figures and documents,
-and immutable release checksums are added only through the remaining release
-gate.
+and immutable release checksums were added through the completed release gates.
+See `docs/RELEASE-STATUS.md` for the published archive identity.
+
+## Current scanner and historical verification
+
+The September SPF correction changes the current measurement core. Its digest
+is recorded for new scans, and it cannot resume the historical measurement.
+The six exact historical core files are retained under
+`dmarc_scanner/history/v2026.08.2/` as verification data. The verifier checks
+them against the original pinned digests, including the narrowly attested
+SQLite URI transition. It does not execute that archived code.
+
+A new measurement must start a fresh database and receive a new version,
+release configuration and provenance before publication. Historical release
+verification must never require reverting current scanner fixes.

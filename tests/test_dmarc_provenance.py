@@ -447,6 +447,7 @@ def test_manifest_hash_is_taken_after_database_close_and_checkpoint(tmp_path):
     assert not Path(str(path) + "-wal").exists()
 
 
+@pytest.mark.usefixtures("historical_core_runtime")
 def test_v1_to_v2_retry_chain_records_explicit_root_attestation(tmp_path):
     path = tmp_path / "v1.db"
     _make_db(path, [
@@ -476,6 +477,7 @@ def test_v1_to_v2_retry_chain_records_explicit_root_attestation(tmp_path):
     assert manifest["release_eligible"] is True
 
 
+@pytest.mark.usefixtures("historical_core_runtime")
 def test_active_v1_full_pass_accepts_seeded_shuffle_digest(tmp_path):
     path = tmp_path / "v1-shuffled.db"
     source = ["a.ch", "b.ch"]
@@ -1202,10 +1204,10 @@ def test_uri_safety_transition_rejects_any_other_measurement_core_file_drift(
     for relative_name in MEASUREMENT_CORE_FILES:
         destination = tmp_path / relative_name
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(SCANNER_REPOSITORY_ROOT / relative_name, destination)
+        shutil.copyfile(provenance.HISTORICAL_CORE_ROOT / relative_name, destination)
     with (tmp_path / changed_file).open("ab") as changed:
         changed.write(b"\n# unregistered drift\n")
-    monkeypatch.setattr(provenance, "SCANNER_REPOSITORY_ROOT", tmp_path)
+    monkeypatch.setattr(provenance, "HISTORICAL_CORE_ROOT", tmp_path)
 
     with pytest.raises(ValueError, match="changed|target bytes"):
         provenance._validated_uri_safety_transition(
@@ -1215,6 +1217,7 @@ def test_uri_safety_transition_rejects_any_other_measurement_core_file_drift(
         )
 
 
+@pytest.mark.usefixtures("historical_core_runtime")
 def test_v1_to_v2_manifest_records_exact_uri_safety_transition(tmp_path):
     path = tmp_path / "transition.db"
     source = ["flaky.ch"]
@@ -1226,6 +1229,7 @@ def test_v1_to_v2_manifest_records_exact_uri_safety_transition(tmp_path):
     ]
 
 
+@pytest.mark.usefixtures("historical_core_runtime")
 def test_v1_to_v2_manifest_rejects_tampered_transition_attestation(tmp_path):
     path = tmp_path / "tampered-transition.db"
     source = ["flaky.ch"]
@@ -1242,6 +1246,7 @@ def test_v1_to_v2_manifest_rejects_tampered_transition_attestation(tmp_path):
     assert path.read_bytes() == before_db
 
 
+@pytest.mark.usefixtures("historical_core_runtime")
 def test_v2_chain_rejects_repeated_uri_safety_transition(tmp_path):
     path = tmp_path / "repeated-transition.db"
     source = ["flaky.ch"]
@@ -1393,3 +1398,26 @@ def test_v2_retry_manifest_rejects_full_universe_accounting_invariant_failures(
         _prepare(path, source, started=START + timedelta(minutes=4))
 
     assert path.read_bytes() == before_db
+
+
+@pytest.fixture
+def historical_core_runtime(monkeypatch):
+    """Exercise historical retry mechanics with the archived runtime identity.
+
+    These synthetic queries do not exercise parsing. Current-core refusal is
+    covered separately; no production transition pin is relaxed for the tests.
+    """
+    monkeypatch.setattr(provenance, "SCANNER_REPOSITORY_ROOT", provenance.HISTORICAL_CORE_ROOT)
+
+
+def test_archived_core_is_exact_and_current_core_cannot_resume_it(tmp_path):
+    assert measurement_core_sha256(provenance.HISTORICAL_CORE_ROOT) == URI_SAFETY_CORE_TRANSITION["to_measurement_core_sha256"]
+    assert measurement_core_sha256() != measurement_core_sha256(provenance.HISTORICAL_CORE_ROOT)
+    path = tmp_path / "historical.db"
+    source = ["case-01"]
+    _make_db(path, [DmarcScanResult(domain="case-01", error="mx_query_error")])
+    _write_v1_root(path, source)
+    before = path.read_bytes(), manifest_path_for(path).read_bytes()
+    with pytest.raises(RuntimeError, match="measurement core differs"):
+        _prepare(path, source)
+    assert (path.read_bytes(), manifest_path_for(path).read_bytes()) == before

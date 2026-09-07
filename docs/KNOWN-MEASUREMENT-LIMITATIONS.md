@@ -26,10 +26,33 @@ the default algorithm when `k` is omitted). Ed25519 and unknown algorithms are
 not classified by that heuristic. Colon-separated testing flags now recognise
 `y` within combinations such as `t=s:y`.
 
-The candidate is **not wired into the current scanner**: the release verifier
-requires the historical measurement core's exact bytes. Adoption requires a
+The candidate is **not wired into the current scanner**. Adoption requires a
 new versioned measurement core and fresh provenance before any new run.
+The verifier now checks the historical measurement core’s exact archived bytes
+separately from current scan code.
 Reproducing the historical release requires
 its pinned scanner version, not current main. A new measurement would require
 a new version and provenance; the original archive remains authoritative for
 what was measured then.
+
+## September 2026 review corrections
+
+The historical SPF parser kept the last `all` mechanism and counted terms
+that an SPF evaluator would ignore. Current parsing stops at the first `all`
+and does not count `redirect` when `all` is present, as specified in
+[RFC 7208 section 5.1](https://www.rfc-editor.org/rfc/rfc7208.html#section-5.1).
+This changes the measurement core for new scans; the published counts have not
+been recomputed. Historical verification reads separately archived, hash-pinned
+core bytes. The DKIM candidate above remains separate from the active parser.
+
+Current aggregate descriptions also clarify two unchanged counting rules:
+`dmarc.detected_all` uses all analyzable rows as its denominator, and invalid
+alignment can overlap strict alignment when one tag is unsupported and the
+other is `s`. The historical `invalid_pct` metric covers parsed numeric values
+outside 0–100, not every syntactically malformed percentage; malformed text
+was defaulted to 100. The public archive retains its original wording.
+
+Public signatures authenticate the release owner's declarations. They do not
+independently prove the contents of an unavailable private database or full
+private manifest chain. Social-card layout corrections and release-tooling
+fixes likewise do not replace previously sealed artifacts.

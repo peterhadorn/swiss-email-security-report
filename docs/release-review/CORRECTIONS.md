@@ -1,6 +1,7 @@
 # Corrections policy
 
-**Review source — not a sealed release file.** The final copy will contain the reserved DOI.
+**Historical pre-publication review source — not a sealed release file.**
+For current publication status, see [release status](../RELEASE-STATUS.md). The final copy will contain the reserved DOI.
 
 ## Contact
 

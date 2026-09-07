@@ -171,7 +171,15 @@ def _assert_closed_categories(conn: sqlite3.Connection, schema: dict[str, str]) 
     if not schema:
         if _count_all(conn, "query_statuses IS NULL OR json_valid(query_statuses) = ? OR json_type(query_statuses) <> ?", (0, "object")):
             raise RuntimeError("invalid query status value; refusing aggregate export")
-        if _count_all(conn, "(error = ? AND EXISTS (SELECT 1 FROM json_each(query_statuses) WHERE value = ?)) OR (error <> ? AND NOT EXISTS (SELECT 1 FROM json_each(query_statuses) WHERE value = ?))", ("", "error", "", "error")):
+        # A scanner crash has no DNS response to record. The CLI stores that
+        # distinct failure as scan_exception with an empty status object.
+        if _count_all(
+            conn,
+            "(error = ? AND EXISTS (SELECT 1 FROM json_each(query_statuses) WHERE value = ?)) "
+            "OR (error <> ? AND NOT EXISTS (SELECT 1 FROM json_each(query_statuses) WHERE value = ?) "
+            "AND NOT (error GLOB ? AND query_statuses = ?))",
+            ("", "error", "", "error", "scan_exception: *", "{}"),
+        ):
             raise RuntimeError("inconsistent query status and error field; refusing aggregate export")
 
     provider_placeholders = ", ".join("?" for _ in KNOWN_PROVIDERS)
@@ -274,7 +282,7 @@ def _specifications(schema: dict[str, str]) -> list[_MetricSpec]:
                     "Reconciliation of no record, missing policy, and unsupported policy observations.", "This is a DNS-observation bucket, not an assessment of actual message handling."),
         _MetricSpec("dmarc.no_detected_enforcement", "dmarc", "has_mx = ? AND (has_dmarc = ? OR (has_dmarc = ? AND COALESCE(NULLIF(dmarc_policy, ?), ?) NOT IN (?, ?)))", (1, 0, 1, "", "absent", "reject", "quarantine"), "mx.present", mx_rows,
                     "Reconciliation of non-enforcing or unsupported DMARC policy observations.", "No detected enforcement is not a determination of actual receiving-mail behaviour."),
-        _MetricSpec("dmarc.detected_all", "dmarc", "has_dmarc = ?", (1,), "population.analyzable", detected_dmarc,
+        _MetricSpec("dmarc.detected_all", "dmarc", "has_dmarc = ?", (1,), "population.analyzable", all_rows,
                     passive, "This includes records on rows with and without MX."),
         _MetricSpec("dmarc.partial_pct", "dmarc", "has_dmarc = ? AND dmarc_pct >= ? AND dmarc_pct < ?", (1, 0, 100), "dmarc.detected_all", detected_dmarc,
                     "Parsed valid DMARC pct= tag (0–99) across all detected DMARC records.", "The p= tag's pct setting is a published value; it does not demonstrate message-level enforcement. Out-of-range pct values are reported separately."),
@@ -283,7 +291,7 @@ def _specifications(schema: dict[str, str]) -> list[_MetricSpec]:
         _MetricSpec("dmarc.strict_alignment", "dmarc", "has_dmarc = ? AND (dmarc_adkim = ? OR dmarc_aspf = ?)", (1, "s", "s"), "dmarc.detected_all", detected_dmarc,
                     "Parsed DMARC adkim= and aspf= tags across all detected DMARC records.", "Strict alignment tags do not demonstrate that mail flows or aligned identifiers were validated."),
         _MetricSpec("dmarc.invalid_alignment", "dmarc", "has_dmarc = ? AND (dmarc_adkim NOT IN (?, ?) OR dmarc_aspf NOT IN (?, ?))", (1, "r", "s", "r", "s"), "dmarc.detected_all", detected_dmarc,
-                    "Detected DMARC record with an adkim= or aspf= value outside the supported r/s values.", "This reports malformed published record content; it is not classified as relaxed or strict alignment."),
+                    "Detected DMARC record with an adkim= or aspf= value outside the supported r/s values.", "At least one alignment tag is unsupported. This bucket can overlap strict alignment when the other tag is s."),
         _MetricSpec("dmarc.no_mx_detected", "dmarc", "has_mx = ? AND has_dmarc = ?", (0, 1), "mx.absent", no_mx_rows,
                     passive, "This is deliberately reported independently of MX routing."),
         _MetricSpec("ds.record_present", "dns", f"{ds} = ?", (1,), "population.analyzable", all_rows,

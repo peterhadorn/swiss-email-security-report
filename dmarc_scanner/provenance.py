@@ -28,6 +28,7 @@ from typing import Any, Iterable, Mapping
 
 
 SCANNER_REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+HISTORICAL_CORE_ROOT = Path(__file__).resolve().parent / "history" / "v2026.08.2"
 _GIT_SHA1 = re.compile(r"^[0-9a-f]{40}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PYTHON_VERSION = re.compile(r"^[0-9]+(?:\.[0-9]+){1,3}(?:[A-Za-z0-9.+-]*)?$")
@@ -224,7 +225,12 @@ def measurement_core_sha256(root: Path | None = None) -> str:
 def _validated_uri_safety_transition(
     from_core: str, to_core: str, value: object | None = None
 ) -> dict[str, Any]:
-    """Validate the single attested, non-measurement v1→v2 core transition."""
+    """Validate the historical v1→v2 transition against archived source bytes.
+
+    Current runtime identity is checked separately before every resume. Keeping
+    historical verification independent lets new scans use corrected parsers
+    without accepting those changes into the old measurement chain.
+    """
     expected = dict(URI_SAFETY_CORE_TRANSITION)
     if value is not None and value != expected:
         raise ValueError("measurement-core transition attestation is not exact")
@@ -233,7 +239,7 @@ def _validated_uri_safety_transition(
         or to_core != expected["to_measurement_core_sha256"]
     ):
         raise ValueError("measurement-core transition is not registered")
-    db_path = SCANNER_REPOSITORY_ROOT / expected["changed_file"]
+    db_path = HISTORICAL_CORE_ROOT / expected["changed_file"]
     db_bytes = db_path.read_bytes()
     if hashlib.sha256(db_bytes).hexdigest() != expected["new_file_sha256"]:
         raise ValueError("attested db.py transition target bytes changed")
@@ -249,12 +255,12 @@ def _validated_uri_safety_transition(
         raise ValueError("attested db.py differs by more than the exact URI construction")
     for relative_name, expected_sha in _UNCHANGED_TRANSITION_FILE_SHA256.items():
         actual_sha = hashlib.sha256(
-            (SCANNER_REPOSITORY_ROOT / relative_name).read_bytes()
+            (HISTORICAL_CORE_ROOT / relative_name).read_bytes()
         ).hexdigest()
         if actual_sha != expected_sha:
             raise ValueError("a non-attested measurement-core file changed")
-    if measurement_core_sha256() != to_core:
-        raise ValueError("attested measurement-core transition target is not current")
+    if measurement_core_sha256(HISTORICAL_CORE_ROOT) != to_core:
+        raise ValueError("archived measurement-core transition target changed")
     return expected
 
 

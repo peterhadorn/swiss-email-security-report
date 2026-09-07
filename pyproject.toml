@@ -24,5 +24,6 @@ dev = [
 packages = ["dmarc_scanner", "release", "figures"]
 
 [tool.setuptools.package-data]
+dmarc_scanner = ["history/v2026.08.2/dmarc_scanner/*.py"]
 release = ["config/*.json", "schema/*.json", "locales/*.json", "LICENSE-DATA.md", "FIGURE-CONTRACT.md"]
 figures = ["charts.json", "fonts/*.ttf", "fonts/*.txt"]

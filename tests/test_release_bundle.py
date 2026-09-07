@@ -1943,3 +1943,33 @@ def test_installed_wheel_contains_and_loads_locale_catalogues(tmp_path):
         str(installed),
     ], check=True, cwd=tmp_path, env=environment, capture_output=True, text=True)
     assert result.stdout.strip() == "Enregistrement MX non nul présent"
+
+
+
+def test_verifier_rejects_unsigned_incomplete_tree_with_matching_checksums(tmp_path, release_module):
+    (tmp_path / "README.md").write_text("Unsigned replacement content.")
+    digest, _ = _identity(tmp_path / "README.md")
+    (tmp_path / "checksums.sha256").write_text(f"{digest}  README.md\n")
+    with pytest.raises(ValueError, match="missing required"):
+        release_module._verify_checksums(tmp_path)
+
+
+def test_finalizer_preserves_sealed_release_when_staging_cleanup_fails(tmp_path, release_module, monkeypatch):
+    staging, _, _ = _stage(tmp_path, release_module)
+    _complete_staging(staging, release_module)
+    real_rmtree = shutil.rmtree
+
+    def partial_cleanup(path, *args, **kwargs):
+        if Path(path) == staging:
+            (staging / "metrics.json").unlink()
+            raise OSError("synthetic cleanup failure")
+        return real_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(shutil, "rmtree", partial_cleanup)
+    with pytest.raises(OSError, match="synthetic cleanup"):
+        release_module.finalize_release(staging_directory=staging)
+    final = staging.parent / release_module.FINAL_DIRECTORY_NAME
+    assert not (staging / "metrics.json").exists()
+    assert (final / "metrics.json").is_file()
+    release_module._verify_checksums(final)
+    assert release_module.main(["verify", "--directory", str(final)]) == 0

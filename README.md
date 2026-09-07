@@ -1,84 +1,121 @@
 # Swiss Email Security Report
 
-Scanner source and reproducibility assets for the Swiss Email Security Report.
-It is a research repository for aggregate, independently verifiable findings
-about DNS-published email-security signals in the Swiss `.ch` namespace.
+How widely do Swiss `.ch` domains publish email-security records?
+This project checks public DNS records and publishes aggregate results, together
+with the code and documentation needed to understand how they were measured.
 
-The repository and sealed aggregate release are public. No raw database, zone input, domain list, hashed-domain list, sampled-domain list, DNS record contents, or domain-level measurement results are published. Do not add these materials in issues, commits, test fixtures, release assets, or derived exports.
+**It measures published DNS signals, not how secure a company or mail service is.**
+A record can exist without working correctly, and an undetected record does not
+always mean the technology is unused.
 
-## Download the aggregate release
+## Read the report or download the data
 
-- Zenodo DOI: https://doi.org/10.5281/zenodo.22116736
-- GitHub Release: https://github.com/peterhadorn/swiss-email-security-report/releases/tag/v2026.08.2
-- Dataset page with direct JSON and CSV downloads: https://ki-barometer.ch/datasets/ch-email-security-2026/
+- [Report in English](https://ki-barometer.ch/en/swiss-email-security-report/)
+- [Data and charts in English](https://ki-barometer.ch/en/datasets/ch-email-security-2026/)
+- [Dataset page and downloads](https://ki-barometer.ch/datasets/ch-email-security-2026/)
+- [Published dataset on Zenodo](https://doi.org/10.5281/zenodo.22116736)
+- [GitHub release v2026.08.2](https://github.com/peterhadorn/swiss-email-security-report/releases/tag/v2026.08.2)
 
-The same sealed archive and archive checksum are published on GitHub and Zenodo. The bundle contains 68 aggregate metrics, documentation, 30 DE/FR/IT figures, an authenticated release-owner approval, and whole-tree checksums.
+The published bundle contains 68 aggregate metrics, documentation, 30 figures
+in German, French and Italian, checksums, and a signed release-owner approval.
+The GitHub and Zenodo downloads contain the same sealed archive.
 
-## Current release state
+## What was measured?
 
-The v2026.08.2 measurement and retry are complete. The final database contains 2,316,512 analyzable rows and 142,615 retained-error rows from the normalized 2,459,127-domain source universe. The aggregate bundle is DOI-bound, owner-approved, sealed, and checksum-verifiable. It contains no domain-level data. See docs/RELEASE-STATUS.md and provenance/README.md for the exact boundary.
+The published release used the SWITCH `.ch` zone snapshot from **12 April 2026**.
+DNS measurement ran on **21–23 August 2026**, including a retry of every row
+that retained an error after the first pass.
 
-## Scope
+| Population | Domains |
+| --- | ---: |
+| Source universe | 2,459,127 |
+| Analyzable after retry | 2,316,512 |
+| Retained errors, excluded from substantive results | 142,615 |
 
-The scanner observes selected public DNS records: MX, SPF, provider-aware DKIM
-selector probes, DMARC, DS, BIMI, MTA-STS TXT, TLS-RPT, CAA, and SMTP TLSA.
-Record presence is descriptive evidence only. It does not demonstrate complete
-standard deployment, mail flow, policy retrieval, DNSSEC validation, effective
-cryptographic strength, or an organisation's security posture.
+Percentages use different denominators. For example, many email metrics refer
+only to analyzable domains with a non-null MX record. Each metric states its
+numerator and denominator. Domains are not companies: one company can own many.
 
-In particular, DKIM results are a provider-aware selector lower bound: a
-domain can use a selector that was not probed. The key-length result is a
-heuristic based on an observed public-key value, not a cryptographic key-size
-measurement. MTA-STS results represent the `_mta-sts` TXT record only; the
-scanner does not retrieve or validate the HTTPS policy file.
+| Signal | What the scanner observes |
+| --- | --- |
+| MX | Published mail-routing hosts and their hostname-based provider categories |
+| SPF | A matching TXT record and selected top-level mechanisms |
+| DKIM | Key material at a provider-dependent set of guessed selectors |
+| DMARC | A matching TXT record and selected policy tags |
+| DS and TLSA | Record presence, without DNSSEC-chain or DANE validation |
+| BIMI, MTA-STS and TLS-RPT | DNS TXT signals; no policy retrieval or delivery test |
+| NS and CAA | Selected supporting DNS records |
 
-`analyze_dmarc.py` prints a local descriptive summary. It is not the canonical
-release exporter and must not be used to produce public aggregate artifacts.
+**Read the [measurement limitations](docs/KNOWN-MEASUREMENT-LIMITATIONS.md) before
+interpreting results.** In particular, DKIM detection is incomplete, the historical
+key-length heuristic is not a weak-key rate, and DMARC tags do not prove actual
+message handling. The excluded error population may differ from the rest.
 
-## Development
+## What can you verify?
 
-Requires Python 3.12 or later. Install the development extras, then run the
-full email-security suite:
+Anyone can check the public files' checksums, signatures, arithmetic, denominators,
+and consistency across documents and metadata. The signatures authenticate the
+release owner's declarations about the private measurement inputs.
+
+Independently confirming the database hash, inspecting the full private run
+chain, or recomputing results requires authorized access to the original private
+inputs and measurements. Running a new scan today will not reproduce historical
+DNS answers.
+
+Raw inputs, domain lists, DNS records and domain-level results are **not published**.
+Do not attach them to issues or commits. See [SECURITY.md](SECURITY.md) for private
+vulnerability reporting and the [corrections policy](https://ki-barometer.ch/datasets/ch-email-security-2026/corrections/)
+for problems with the results or wording.
+
+## Work with the code
+
+Use Python 3.12 or later. From a clone of this repository:
 
 ```bash
-python3 -m pip install -e '.[dev]'
-python3 -m pytest -q
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+python -m pytest -q
 ```
 
-To inspect a local SQLite result database without exporting it:
+The release tooling also needs an `openssl` executable with Ed25519 support.
+To verify an extracted published bundle, use its absolute directory path:
 
 ```bash
-python3 analyze_dmarc.py /path/to/dmarc_scan_results.db
+python -m release.build_release verify --directory /path/to/v2026.08.2
 ```
 
-Keep that database outside version control. The scanner source is MIT-licensed
-in `LICENSE`; licensing for the sealed aggregate dataset and figures is recorded
-inside the release bundle.
+To inspect your own local scanner database:
 
-Each scan writes a private adjacent `*.db.manifest.json` only after SQLite has
-committed, checkpointed, and closed. It records reproducibility metadata such
-as normalized-input and output checksums, resolver list, scanner revision,
-timestamps, runtime, and concurrency settings. The manifest is not a public
-release artifact and is ignored by Git along with the result database.
+```bash
+python analyze_dmarc.py /path/to/scan.db
+```
 
-Its input provenance distinguishes the normalized source list from the
-effective list after `--shuffle` (seed 42) and `--limit`; `--limit 0` is an
-intentional empty scan. It also records the complete public-resolver
-configuration and the scanner's Git dirty state. Legacy Python attributes
-`dnssec_signed` and `has_tlsa` are not accepted by the Python constructor;
-use `has_ds_record` and `has_tlsa_record`. Archived SQLite columns remain
-readable through the explicit `metric_column()` adapter and are never migrated
-in place.
+The analyzer prints a descriptive summary; it is not the public release exporter.
+Keep scan inputs and outputs outside version control. Scans write a private
+SQLite database, an adjacent manifest and a manifest archive. Resume supports
+retrying errors from a completed, compatible full scan; it is not recovery of
+an interrupted or limited scan.
 
-See `MIGRATION.md`, `provenance/README.md`, and `provenance/2026-scan.json` for
-the scoped clean-history import, archived legacy measurement, and current
-release-candidate provenance.
+## Published release versus current code
 
-## Measurement interpretation update — September 2026
+**The published v2026.08.2 archive is unchanged.** Current code includes later
+bug fixes and clearer descriptions. Corrected SPF parsing is used for new scans;
+its measurement-core checksum differs from the published run. It cannot resume
+the historical scan or be substituted into its provenance chain.
 
-See [known measurement limitations](docs/KNOWN-MEASUREMENT-LIMITATIONS.md)
-before interpreting DMARC validity, DKIM key strength, or DNSSEC figures.
-The published v2026.08.2 archive and metrics remain unchanged. The report and
-aggregate downloads are now also prepared in English:
-[report](https://ki-barometer.ch/en/swiss-email-security-report/) ·
-[data and charts](https://ki-barometer.ch/en/datasets/ch-email-security-2026/).
+Historical verification uses the exact archived core bytes in
+`dmarc_scanner/history/v2026.08.2/`. To reproduce the historical software environment,
+use the [v2026.08.2 tag](https://github.com/peterhadorn/swiss-email-security-report/tree/v2026.08.2).
+Changes to DOI-bound files or measurements require a new release and approval.
+The exporter remains pinned to v2026.08.2; publishing a new measurement requires
+new release configuration, schemas and provenance.
+
+See the [release status](docs/RELEASE-STATUS.md), [provenance guide](provenance/README.md),
+and [historical review documents](docs/release-review/README.md) for details.
+
+## Licenses
+
+Code is [MIT-licensed](LICENSE). Published aggregate data, documentation and figures
+use [CC BY 4.0](release/LICENSE-DATA.md), with attribution to Peter Hadorn / WebEvolve.
+The private source corpus and measurements are not included in that license grant.

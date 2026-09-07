@@ -1,6 +1,7 @@
 # Methodology
 
-**Review source — not a sealed release file.** The final document receives the reserved DOI and authenticated inventory only after approval.
+**Historical pre-publication review source — not a sealed release file.**
+For current publication status, see [release status](../RELEASE-STATUS.md). The final document receives the reserved DOI and authenticated inventory only after approval.
 
 ## Source universe
 
@@ -73,7 +74,7 @@ SPF presence is not complete protection. The release classifies observed record 
 
 ### DKIM
 
-DKIM detection uses a provider-aware set of known selectors. Arbitrary private selectors cannot be enumerated from DNS, so `dkim.selector_observed` is a lower bound. Weak-key classification is a length heuristic, not a cryptographic audit. Testing mode measures the observed flag only.
+DKIM detection uses a provider-aware set of known selectors. Arbitrary private selectors cannot be enumerated from DNS, so `dkim.selector_observed` is a lower bound. The historical key-length flag is a length heuristic, not a weak-key classification or a cryptographic audit. It can include legitimate Ed25519 keys. Testing mode measures the observed flag only.
 
 ### DMARC
 

@@ -41,9 +41,9 @@ the two manifests, the final database identity, and the aggregate staging; it
 does not treat the archived 17–19 August timestamps as the public measurement
 interval.
 
-This repository remains private until its release gate is satisfied; it is
-intended to become public only with approved aggregate data and reproducibility
-assets.
+The repository and approved v2026.08.2 aggregate release are public. The
+private measurement inputs and results remain outside the public repository.
+See `docs/RELEASE-STATUS.md` for the completed publication gates.
 
 No raw database, zone input, domain list, hashed-domain list, or domain-level
 result is included or permitted for public release.

@@ -1,6 +1,7 @@
 # Release notes v2026.08.2
 
-**Review source — not a sealed release file.** Publication awaits final sealing and upload verification.
+**Historical pre-publication review source — not a sealed release file.**
+For current publication status, see [release status](../RELEASE-STATUS.md). Publication awaits final sealing and upload verification.
 
 ## Release identity
 
@@ -31,7 +32,7 @@ Only aggregate public data are included. Domain-level inputs and results remain 
 - 142,615 rows retained an error after the complete retry and are excluded from substantive denominators.
 - The source universe is a domain corpus, not a company register.
 - SPF analysis does not fully recurse through every `include` and `redirect`.
-- DKIM selector detection is a lower bound; weak-key detection is a length heuristic.
+- DKIM selector detection is a lower bound; the key-length flag is a heuristic and does not establish weak keys.
 - DMARC tags measure published policy signals, not recipient behavior or incidents.
 - DS and TLSA metrics measure record presence, not validated DNSSEC or functional DANE.
 - BIMI, MTA-STS, and TLS-RPT metrics measure DNS record presence only.

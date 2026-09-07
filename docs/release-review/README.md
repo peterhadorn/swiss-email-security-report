@@ -1,6 +1,7 @@
 # Swiss Email Security Report aggregate release v2026.08.2
 
-**Review source — not a sealed release file.** The final copy receives the reserved DOI and authenticated artifact inventory only after external DOI approval and editorial signoff.
+**Historical pre-publication review source — not a sealed release file.**
+For current publication status, see [release status](../RELEASE-STATUS.md). The final copy receives the reserved DOI and authenticated artifact inventory only after external DOI approval and editorial signoff.
 
 Release-Version: v2026.08.2
 Source-Snapshot-Date: 2026-04-12
@@ -54,7 +55,7 @@ The SWITCH zone snapshot, domain list, private database, and any third-party sou
 
 The public repository provides the scanner, manifest validators, deterministic aggregate implementations, schemas, figure generator, and release finalizer.
 
-Reproducing the exact aggregate values additionally requires authorized access to the same source universe and private domain-level measurements. Verification of the published bundle does not: users can validate checksums, schemas, arithmetic identities, metric denominators, run-chain bindings, database identity, and cross-file references without the private records.
+Reproducing the exact aggregate values additionally requires authorized access to the same source universe and private domain-level measurements. Public-bundle verification does not require private records: users can check checksums, signatures, schemas, arithmetic identities, metric denominators, and cross-file references. Signatures authenticate the owner’s declarations about the database and private run chain. Independently checking the database hash or the complete private manifest chain requires authorized access to those private files.
 
 The release uses:
 

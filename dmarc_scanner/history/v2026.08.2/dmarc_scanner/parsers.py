@@ -119,10 +119,8 @@ def parse_spf(record: str) -> dict:
         tl = token.lower()
         if tl in _ALL_MECHANISMS:
             all_mechanism = _ALL_MECHANISMS[tl]
-            break
-        bare = tl[1:] if tl[:1] in _QUALIFIER_CHARS else tl
-        if bare.startswith("redirect=") and any(t.lower() in _ALL_MECHANISMS for t in tokens):
             continue
+        bare = tl[1:] if tl[:1] in _QUALIFIER_CHARS else tl
         if bare in _LOOKUP_BARE_TOKENS or bare.startswith(_LOOKUP_PREFIXES):
             lookup_count += 1
 
