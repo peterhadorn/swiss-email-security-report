@@ -10,12 +10,17 @@ always mean the technology is unused.
 
 ## Read the report or download the data
 
+The report is published by WebEvolve in four languages. The former KI-Barometer
+article URLs permanently redirect to the corresponding translations. Aggregate
+data, downloadable charts and the corrections policy remain hosted on
+KI-Barometer. Both studies are listed in the [WebEvolve study overview](https://webevolve.ch/studien/).
+
 | Language | Report | Data and current charts |
 | --- | --- | --- |
-| Deutsch | [Artikel](https://ki-barometer.ch/schweizer-e-mail-sicherheitsreport/) | [Daten und Grafiken](https://ki-barometer.ch/datasets/ch-email-security-2026/) |
-| Français | [Rapport](https://ki-barometer.ch/fr/rapport-securite-e-mail-suisse/) | [Données et graphiques](https://ki-barometer.ch/fr/datasets/ch-email-security-2026/) |
-| Italiano | [Rapporto](https://ki-barometer.ch/it/rapporto-sicurezza-email-svizzera/) | [Dati e grafici](https://ki-barometer.ch/it/datasets/ch-email-security-2026/) |
-| English | [Report](https://ki-barometer.ch/en/swiss-email-security-report/) | [Data and charts](https://ki-barometer.ch/en/datasets/ch-email-security-2026/) |
+| Deutsch | [Artikel](https://webevolve.ch/studien/schweizer-e-mail-sicherheitsreport/) | [Daten und Grafiken](https://ki-barometer.ch/datasets/ch-email-security-2026/) |
+| Français | [Rapport](https://webevolve.ch/fr/etudes/rapport-securite-e-mail-suisse/) | [Données et graphiques](https://ki-barometer.ch/fr/datasets/ch-email-security-2026/) |
+| Italiano | [Rapporto](https://webevolve.ch/it/studi/rapporto-sicurezza-email-svizzera/) | [Dati e grafici](https://ki-barometer.ch/it/datasets/ch-email-security-2026/) |
+| English | [Report](https://webevolve.ch/en/studies/swiss-email-security-report/) | [Data and charts](https://ki-barometer.ch/en/datasets/ch-email-security-2026/) |
 
 - [Published dataset on Zenodo](https://doi.org/10.5281/zenodo.22116736)
 - [GitHub release v2026.08.2](https://github.com/peterhadorn/swiss-email-security-report/releases/tag/v2026.08.2)

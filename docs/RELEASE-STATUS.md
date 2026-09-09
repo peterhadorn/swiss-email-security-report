@@ -55,3 +55,15 @@ v2026.08.2 tag and release assets retain their existing identities.
 No controlled release gates remain for v2026.08.2. Any change to the underlying
 measurement or measurement-core identity requires a new release version and
 provenance chain.
+
+## WebEvolve article migration — 9 September 2026
+
+The report is now published on WebEvolve in German, French, Italian and English.
+See the [README language table](../README.md#read-the-report-or-download-the-data)
+for the current article and download URLs. The four former KI-Barometer article
+URLs use permanent redirects to the matching WebEvolve translations.
+
+The aggregate dataset, current chart downloads and corrections policy remain
+on KI-Barometer. Zenodo DOI 10.5281/zenodo.22116736 and the v2026.08.2 GitHub
+Release are unchanged. This is a publication-location update, not a new scan or
+a new data release. No sealed files or signed provenance were modified.

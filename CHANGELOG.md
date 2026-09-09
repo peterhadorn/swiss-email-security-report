@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### WebEvolve publication — 2026-09-09
+
+- Replace the four README article links with the published WebEvolve URLs.
+- Document the permanent, language-matched redirects from KI-Barometer.
+- Keep aggregate data, chart downloads and correction-policy URLs on KI-Barometer.
+- No changes to scanner code, measurements, signed provenance or the sealed v2026.08.2 archive.
+
 ### Publication navigation — 2026-09-07
 
 - Link all four report languages and their data/chart download pages.
