@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Reader-friendly documentation and inline downloads: 2026-09-09
+
+- Explain the main finding and its comparison group in plain English, with technical details below the reader-facing links.
+- Separate current publication status from historical verification.
+- Link all four languages directly to downloads within the WebEvolve articles and the correction section.
+- Preserve legacy file URLs, archived releases and measurements.
+
 ### WebEvolve publication — 2026-09-09
 
 - Replace the four README article links with the published WebEvolve URLs.

@@ -1,26 +1,49 @@
-# `v2026.08.2` release status
+# Release and publication status
 
-Last independently verified against the private run manifests, final database,
-sealed assets, DOI record, and live KI-Barometer deployment on 26 August 2026.
+## Current publication: 9 September 2026
 
-## Website and documentation update: 7 September 2026
+The report is published on WebEvolve in German, French, Italian and English.
+The [README language table](../README.md#read-the-report-or-download-the-data)
+links to each article and its data downloads. The former KI-Barometer article
+and data-page addresses permanently redirect to the matching WebEvolve articles.
+The former corrections page redirects to the German article’s correction section.
 
-- The report and dataset pages are now available in German, French, Italian
-  and English. All four are linked from the repository README.
-- The website provides updated editorial charts in all four languages, derived
-  from the unchanged release metrics. Their source and generated assets live in
-  the KI-Barometer website repository.
-- Website copy, chart labels and expandable technical explanations were updated.
-  These presentation changes do not modify the sealed data or archive.
-- The archive still contains the original 30 German, French and Italian figure
-  files. English and newer editorial charts are separate website downloads.
-- This documentation update does not claim a new independent verification of
-  the private measurements. The verification date above remains 26 August 2026.
+Each article includes CSV/JSON downloads, the four study chart families and
+correction guidance. WebEvolve hosts byte-identical copies of the public data and
+chart files. Legacy KI-Barometer file URLs remain available for existing citations.
+Both Zenodo DOI [10.5281/zenodo.22116736](https://doi.org/10.5281/zenodo.22116736)
+and the [GitHub release v2026.08.2](https://github.com/peterhadorn/swiss-email-security-report/releases/tag/v2026.08.2)
+provide the unchanged original archive.
 
-The repository's default development branch is now named main. The published
-v2026.08.2 tag and release assets retain their existing identities.
+The article move and README edits do not represent a new scan, a new dataset or
+a new verification of the private measurements. No archived release files or
+signed provenance were modified.
 
-## Completed
+## Verification date
+
+The recorded independent verification took place on **26 August 2026**. It covered
+the private scan records, final database, archived release files, DOI record and
+the KI-Barometer publication as it existed then. That date has not been advanced
+by later website or documentation updates.
+
+## Website update: 7 September 2026
+
+The website added updated editorial charts and explanations in four languages.
+Those downloadable charts use the unchanged release metrics. Their source files
+and generated downloads remain in the KI-Barometer website repository.
+
+The original archive contains 30 charts in German, French and Italian. English
+charts and newer versions are separate website downloads, not replacements for
+the archived files.
+
+The repository's default development branch is `main`. The published `v2026.08.2`
+tag and release files retain their original identities.
+
+## Technical release record
+
+The following records describe the original release, not a new September scan.
+
+### Original measurement and verification
 
 - The provenance-enabled root run covered the complete normalized 2,459,127-
   domain source universe.
@@ -37,33 +60,21 @@ v2026.08.2 tag and release assets retain their existing identities.
   canonical metrics, CSV and JSON representations, an aggregate attestation,
   immutable inventory, DOI-bound metadata, and final release manifest.
 - Release documentation and the DE/FR/IT figure matrix are complete and validated.
-- The complete local test suite passes under the pinned Python 3.12 environment.
+- The complete local test suite passed under the pinned Python 3.12 environment at release verification.
 
-## Completed release gates
+### Original release approvals and publication
 
 - The release owner approved and configured the Ed25519 DOI-authority fingerprint.
 - Zenodo DOI 10.5281/zenodo.22116736 is published and resolves to the sealed release assets.
 - The DOI-bound citation, five reviewed documents, and exact 30-file DE/FR/IT figure matrix are generated and validated.
 - The release owner approved and signed the complete prospective artifact tree.
-- The finalizer created the immutable inventory and sealed release directory; all checksums and signatures verify.
+- The finalizer created the immutable inventory and sealed release directory. All checksums and signatures verified.
 - Commit 721e0b5 is tagged as v2026.08.2 and the tag is published.
 - GitHub and Zenodo publish the same 3,002,167-byte archive with SHA-256 07ec8531d6b257a49abd10d4e9fcb6e06835e63852e6dd8a8b8e7871c32c71f7.
-- KI-Barometer publishes the sealed manifest, aggregate JSON/CSV downloads, DOI, archive links, and indexed DE/FR/IT report pages.
+- KI-Barometer originally published the manifest, aggregate JSON/CSV downloads, DOI, archive links and DE/FR/IT report pages. The articles have since moved to WebEvolve. Downloads are now also included in the WebEvolve articles. The legacy file URLs remain available.
 
-## Publication state
+## Requirements for a future data release
 
-No controlled release gates remain for v2026.08.2. Any change to the underlying
-measurement or measurement-core identity requires a new release version and
-provenance chain.
-
-## WebEvolve article migration — 9 September 2026
-
-The report is now published on WebEvolve in German, French, Italian and English.
-See the [README language table](../README.md#read-the-report-or-download-the-data)
-for the current article and download URLs. The four former KI-Barometer article
-URLs use permanent redirects to the matching WebEvolve translations.
-
-The aggregate dataset, current chart downloads and corrections policy remain
-on KI-Barometer. Zenodo DOI 10.5281/zenodo.22116736 and the v2026.08.2 GitHub
-Release are unchanged. This is a publication-location update, not a new scan or
-a new data release. No sealed files or signed provenance were modified.
+All approval steps for v2026.08.2 are complete. Changing the measurements or the
+scanner code used to produce them requires a new release version and a new
+record of its inputs, processing steps and approvals.
